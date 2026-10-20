@@ -4,10 +4,12 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/omyo/gonest/internal/core"
+	"github.com/omyo/gonest/internal/module"
+	"github.com/omyo/gonest/internal/pipeline"
 )
 
 // App is a bootstrapped Gonest application.
@@ -17,7 +19,9 @@ import (
 //	log.Fatal(app.Listen(":8080"))
 type App struct {
 	cfg AppConfig
-	// Implementation fields are added by agent B1 (internal/module).
+	rt  *module.Runtime
+
+	shutdownOnce sync.Once
 }
 
 // AppConfig is the result of applying Options. Exposed for internal packages.
@@ -80,25 +84,39 @@ func WithoutStartupLog() Option { return func(c *AppConfig) { c.DisableStartupLo
 // provider, instantiates controllers, mounts routes and runs OnModuleInit and
 // OnApplicationBootstrap hooks. Any failure aborts startup with a descriptive error.
 func New(root *Module, opts ...Option) (*App, error) {
-	_ = root
-	_ = opts
-	return nil, core.ErrNotImplemented
+	cfg := AppConfig{ShutdownTimeout: defaultShutdownTimeout}
+	for _, o := range opts {
+		if o != nil {
+			o(&cfg)
+		}
+	}
+	if cfg.ShutdownTimeout <= 0 {
+		cfg.ShutdownTimeout = defaultShutdownTimeout
+	}
+	if cfg.Logger == nil {
+		cfg.Logger = slog.Default()
+	}
+	if cfg.Engine == nil {
+		cfg.Engine = newEngine()
+	}
+	rt, err := module.Bootstrap(context.Background(), root, module.Options{
+		Engine:       cfg.Engine,
+		Logger:       cfg.Logger,
+		GlobalPrefix: cfg.GlobalPrefix,
+		Globals: pipeline.Globals{
+			Guards:       cfg.Guards,
+			Interceptors: cfg.Interceptors,
+			Pipes:        cfg.Pipes,
+			Filters:      cfg.Filters,
+		},
+		StartupLog: !cfg.DisableStartupLog,
+	})
+	if err != nil {
+		return nil, err
+	}
+	cfg.Logger = rt.Logger
+	return &App{cfg: cfg, rt: rt}, nil
 }
-
-// Listen serves HTTP on addr until SIGINT or SIGTERM, then shuts down gracefully
-// and runs shutdown hooks. It returns nil after a clean shutdown.
-func (a *App) Listen(addr string) error { return core.ErrNotImplemented }
-
-// Serve serves on an existing listener-backed server; useful for tests and
-// custom TLS. It blocks until ctx is cancelled, then shuts down gracefully.
-func (a *App) Serve(ctx context.Context, srv *http.Server) error {
-	return core.ErrNotImplemented
-}
-
-// Shutdown runs OnModuleDestroy, BeforeApplicationShutdown and
-// OnApplicationShutdown hooks in reverse dependency order. Safe to call once;
-// later calls return nil.
-func (a *App) Shutdown(ctx context.Context) error { return core.ErrNotImplemented }
 
 // Engine returns the gin engine, for advanced customisation.
 func (a *App) Engine() *gin.Engine { return a.cfg.Engine }
@@ -107,18 +125,19 @@ func (a *App) Engine() *gin.Engine { return a.cfg.Engine }
 func (a *App) Handler() http.Handler { return a.cfg.Engine }
 
 // Routes returns every mounted route.
-func (a *App) Routes() []*RouteInfo { return nil }
+func (a *App) Routes() []*RouteInfo { return a.rt.Routes.All() }
 
-// Get resolves a provider of type T from the application, as seen from the root module.
+// Get resolves a provider of type T from the application, as seen from the
+// root module: the root's own providers, providers exported to it by its
+// imports, global modules' exports and framework providers. Providers private
+// to another module are not reachable.
 func Get[T any](a *App) (T, error) {
-	var zero T
-	return zero, core.ErrNotImplemented
+	return resolve[T](a, TokenOf[T]())
 }
 
-// GetNamed resolves a named provider of type T.
+// GetNamed resolves a named provider of type T, with the same visibility as Get.
 func GetNamed[T any](a *App, name string) (T, error) {
-	var zero T
-	return zero, core.ErrNotImplemented
+	return resolve[T](a, NamedTokenOf[T](name))
 }
 
 // MustGet is Get that panics on error; for main functions and tests.
