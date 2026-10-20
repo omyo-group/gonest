@@ -1,0 +1,13 @@
+// Package app wires the root module of the application.
+package app
+
+import (
+	"github.com/omyo/gonest"
+)
+
+// AppModule is the root module. Import feature modules here
+// (generate them with `gonest g module <name>`).
+var AppModule = &gonest.Module{
+	Name:        "app",
+	Controllers: []any{NewHealthController},
+}

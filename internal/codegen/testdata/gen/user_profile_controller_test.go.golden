@@ -1,0 +1,20 @@
+package user_profile
+
+import (
+	"testing"
+
+	"github.com/omyo/gonest"
+)
+
+var _ gonest.Controller = (*UserProfileController)(nil)
+
+func TestUserProfileControllerFindAll(t *testing.T) {
+	c := NewUserProfileController()
+	got, err := c.FindAll(nil, gonest.Empty{})
+	if err != nil {
+		t.Fatalf("FindAll returned error: %v", err)
+	}
+	if got == nil {
+		t.Fatal("FindAll returned nil slice")
+	}
+}

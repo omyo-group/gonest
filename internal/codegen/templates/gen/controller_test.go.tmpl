@@ -1,0 +1,20 @@
+package {{.Pkg}}
+
+import (
+	"testing"
+
+	"github.com/omyo/gonest"
+)
+
+var _ gonest.Controller = (*{{.Type}})(nil)
+
+func Test{{.Type}}FindAll(t *testing.T) {
+	c := New{{.Type}}({{if .WithService}}New{{.ServiceType}}(){{end}})
+	got, err := c.FindAll(nil, gonest.Empty{})
+	if err != nil {
+		t.Fatalf("FindAll returned error: %v", err)
+	}
+	if got == nil {
+		t.Fatal("FindAll returned nil slice")
+	}
+}

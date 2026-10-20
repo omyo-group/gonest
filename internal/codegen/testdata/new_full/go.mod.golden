@@ -1,0 +1,7 @@
+module github.com/acme/my-app
+
+go 1.24.0
+
+require github.com/omyo/gonest v0.1.0
+
+replace github.com/omyo/gonest => /src/gonest

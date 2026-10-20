@@ -1,0 +1,19 @@
+package app
+
+import (
+	"testing"
+
+	"github.com/omyo/gonest"
+)
+
+var _ gonest.Controller = (*HealthController)(nil)
+
+func TestHealthControllerCheck(t *testing.T) {
+	got, err := NewHealthController().Check(nil, gonest.Empty{})
+	if err != nil {
+		t.Fatalf("Check returned error: %v", err)
+	}
+	if got.Status != "ok" {
+		t.Fatalf("status = %q, want ok", got.Status)
+	}
+}

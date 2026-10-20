@@ -1,0 +1,13 @@
+package user_profile
+
+import (
+	"context"
+	"testing"
+)
+
+func TestUserProfileServiceFindAll(t *testing.T) {
+	s := NewUserProfileService()
+	if got := s.FindAll(context.Background()); got == nil {
+		t.Fatal("FindAll returned nil slice")
+	}
+}

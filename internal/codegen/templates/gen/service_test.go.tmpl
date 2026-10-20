@@ -1,0 +1,13 @@
+package {{.Pkg}}
+
+import (
+	"context"
+	"testing"
+)
+
+func Test{{.Type}}FindAll(t *testing.T) {
+	s := New{{.Type}}()
+	if got := s.FindAll(context.Background()); got == nil {
+		t.Fatal("FindAll returned nil slice")
+	}
+}

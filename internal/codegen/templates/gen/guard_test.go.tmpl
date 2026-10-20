@@ -1,0 +1,16 @@
+package {{.Pkg}}
+
+import (
+	"testing"
+
+	"github.com/omyo/gonest"
+)
+
+var _ gonest.Guard = (*{{.Type}})(nil)
+
+func Test{{.Type}}CanActivate(t *testing.T) {
+	ok, err := New{{.Type}}().CanActivate(nil)
+	if err != nil || !ok {
+		t.Fatalf("CanActivate = %v, %v; want true, nil", ok, err)
+	}
+}

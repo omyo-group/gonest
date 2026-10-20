@@ -1,0 +1,17 @@
+package user_profile
+
+import "context"
+
+// UserProfileService holds the business logic of the user-profile feature.
+type UserProfileService struct{}
+
+// NewUserProfileService is the constructor registered in the module's Providers.
+// Add dependencies as parameters; they are injected by type.
+func NewUserProfileService() *UserProfileService {
+	return &UserProfileService{}
+}
+
+// FindAll returns every user-profile item.
+func (s *UserProfileService) FindAll(_ context.Context) []string {
+	return []string{}
+}

@@ -1,0 +1,24 @@
+package user_profile
+
+import "github.com/omyo/gonest"
+
+// UserProfileController exposes the user-profile routes.
+type UserProfileController struct {
+}
+
+// NewUserProfileController is the constructor registered in the module's Controllers.
+func NewUserProfileController() *UserProfileController {
+	return &UserProfileController{}
+}
+
+// Routes implements gonest.Controller.
+func (c *UserProfileController) Routes(r gonest.Router) {
+	r.Prefix("/user-profile")
+	r.Use(gonest.Tags("user-profile"))
+	r.GET("", gonest.Handle(c.FindAll), gonest.Summary("List user-profile"))
+}
+
+// FindAll handles GET /user-profile.
+func (c *UserProfileController) FindAll(ctx *gonest.Ctx, _ gonest.Empty) ([]string, error) {
+	return []string{}, nil
+}

@@ -1,0 +1,26 @@
+package {{.Pkg}}
+
+import (
+	"errors"
+
+	"github.com/omyo/gonest"
+)
+
+// {{.Type}} turns errors into responses. Catch returns true when it wrote the
+// response, false to let the next filter try.
+type {{.Type}} struct{}
+
+// New{{.Type}} is the constructor registered in the module's Providers.
+func New{{.Type}}() *{{.Type}} {
+	return &{{.Type}}{}
+}
+
+// Catch implements gonest.ExceptionFilter. This example handles *gonest.HTTPError.
+func (f *{{.Type}}) Catch(ctx *gonest.Ctx, err error) bool {
+	var he *gonest.HTTPError
+	if !errors.As(err, &he) {
+		return false
+	}
+	ctx.Gin().AbortWithStatusJSON(he.Status, he.Body())
+	return true
+}

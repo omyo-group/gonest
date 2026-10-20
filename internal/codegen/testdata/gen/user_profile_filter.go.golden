@@ -1,0 +1,26 @@
+package user_profile
+
+import (
+	"errors"
+
+	"github.com/omyo/gonest"
+)
+
+// UserProfileFilter turns errors into responses. Catch returns true when it wrote the
+// response, false to let the next filter try.
+type UserProfileFilter struct{}
+
+// NewUserProfileFilter is the constructor registered in the module's Providers.
+func NewUserProfileFilter() *UserProfileFilter {
+	return &UserProfileFilter{}
+}
+
+// Catch implements gonest.ExceptionFilter. This example handles *gonest.HTTPError.
+func (f *UserProfileFilter) Catch(ctx *gonest.Ctx, err error) bool {
+	var he *gonest.HTTPError
+	if !errors.As(err, &he) {
+		return false
+	}
+	ctx.Gin().AbortWithStatusJSON(he.Status, he.Body())
+	return true
+}

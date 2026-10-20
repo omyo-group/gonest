@@ -1,0 +1,16 @@
+package {{.Pkg}}
+
+import (
+	"errors"
+	"testing"
+
+	"github.com/omyo/gonest"
+)
+
+var _ gonest.ExceptionFilter = (*{{.Type}})(nil)
+
+func Test{{.Type}}CatchIgnoresOtherErrors(t *testing.T) {
+	if New{{.Type}}().Catch(nil, errors.New("plain error")) {
+		t.Fatal("Catch handled a non-HTTP error")
+	}
+}

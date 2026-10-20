@@ -1,0 +1,31 @@
+# my-app
+
+A [Gonest](https://github.com/omyo/gonest) application (NestJS architecture on Gin).
+
+## Run
+
+```sh
+go mod tidy
+go run .
+curl localhost:8080/health
+```
+
+## Layout
+
+- `main.go`: bootstraps `app.AppModule` and listens.
+- `internal/app`: root module and the health controller.
+- `internal/app/config.go`: typed configuration (`config.ForRoot[AppConfig]`); copy `.env.example` to `.env` to override.
+
+## Generate code
+
+```sh
+gonest g module users
+gonest g service users
+gonest g controller users
+```
+
+Run `gonest g --help` for guards, interceptors, filters, pipes and DTOs.
+
+## Make targets
+
+`make build`, `make run`, `make test`, `make lint`, `make docker`.

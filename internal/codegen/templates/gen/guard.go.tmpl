@@ -1,0 +1,17 @@
+package {{.Pkg}}
+
+import "github.com/omyo/gonest"
+
+// {{.Type}} authorises requests. Attach it with gonest.UseGuards(&{{.Type}}{}).
+type {{.Type}} struct{}
+
+// New{{.Type}} is the constructor registered in the module's Providers.
+func New{{.Type}}() *{{.Type}} {
+	return &{{.Type}}{}
+}
+
+// CanActivate implements gonest.Guard. Return (false, nil) for 403, or an
+// error such as gonest.Unauthorized for another status.
+func (g *{{.Type}}) CanActivate(_ *gonest.Ctx) (bool, error) {
+	return true, nil
+}

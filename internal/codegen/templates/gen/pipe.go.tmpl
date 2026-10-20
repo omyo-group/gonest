@@ -1,0 +1,17 @@
+package {{.Pkg}}
+
+import "github.com/omyo/gonest"
+
+// {{.Type}} transforms or validates the bound handler input. v holds a value
+// of type meta.Type; return a value of the same type.
+type {{.Type}} struct{}
+
+// New{{.Type}} is the constructor registered in the module's Providers.
+func New{{.Type}}() *{{.Type}} {
+	return &{{.Type}}{}
+}
+
+// Transform implements gonest.Pipe.
+func (p *{{.Type}}) Transform(_ *gonest.Ctx, v any, _ gonest.ArgMeta) (any, error) {
+	return v, nil
+}

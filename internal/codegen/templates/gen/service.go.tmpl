@@ -1,0 +1,17 @@
+package {{.Pkg}}
+
+import "context"
+
+// {{.Type}} holds the business logic of the {{.Base.Kebab}} feature.
+type {{.Type}} struct{}
+
+// New{{.Type}} is the constructor registered in the module's Providers.
+// Add dependencies as parameters; they are injected by type.
+func New{{.Type}}() *{{.Type}} {
+	return &{{.Type}}{}
+}
+
+// FindAll returns every {{.Base.Kebab}} item.
+func (s *{{.Type}}) FindAll(_ context.Context) []string {
+	return []string{}
+}
