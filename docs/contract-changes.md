@@ -42,4 +42,4 @@ proposals.
   relative to the global prefix).
 - **Impact:** docs/contracts.md (lead), B1 (middleware matching), C1 (guide).
 - **Workaround in use:** behaviour implemented and tested in internal/pipeline.
-- **Decision:**
+- **Decision:** (lead) accepted. Documented in docs/contracts.md; B1 strips GlobalPrefix before matching RouteSpecs (NestJS semantics).

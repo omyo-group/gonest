@@ -38,6 +38,16 @@ The source of truth is `internal/core` (re-exported by the root package
   `ValidationErrors` details, field names taken from the source tag.
 - Conversion failures (e.g. `?page=abc` for an int) produce 400 with a
   FieldError whose Rule is `type`.
+- `Handle[*In, Out]` is accepted (binds into a fresh `*In`, one allocation fewer).
+- Types whose pointer implements `encoding.TextUnmarshaler` are supported
+  scalars; `form` fields of type `*multipart.FileHeader` or
+  `[]*multipart.FileHeader` receive uploads.
+- An empty value (`?page=`) for a non-string scalar counts as missing, so the
+  default applies; slices drop empty items.
+- Exported fields without a source tag are never bound, not even from the JSON
+  body, so a body cannot override path or query values.
+- Mixing `json` and `form` fields, a `path` field naming a parameter absent from
+  the route, or an unsupported field type fails at Mount (bootstrap).
 
 ## Response rules
 
@@ -55,6 +65,10 @@ The source of truth is `internal/core` (re-exported by the root package
 | `internal/di` | `di.New() *Container` implementing `core.Container` | B1 |
 | `internal/pipeline` | `pipeline.New(Options) *Mounter`; `Mounter.SetGlobals(Globals)`, `Mounter.Mount(ctrl, module, MiddlewareFor) ([]*core.RouteInfo, error)`, `Mounter.InstallFallbacks()` | B1, B3 |
 | `internal/module` | designed by B1 | root `App` |
+
+`MiddlewareFor` receives the full path including `GlobalPrefix`; `RouteSpec`
+paths in `Configure` are relative to the global prefix (NestJS semantics), so
+the module package strips the prefix before matching.
 
 Framework providers registered by `App` with a nil owner (visible everywhere):
 `*core.RouteTable` (as `*gonest.RouteTable`) and `*slog.Logger` (unless the
