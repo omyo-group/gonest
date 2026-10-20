@@ -3,6 +3,7 @@ package pipeline
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"reflect"
 	"runtime/debug"
@@ -48,9 +49,16 @@ func (p *panicError) Unwrap() error {
 	return nil
 }
 
+// LoggerKey is the gin context key under which middleware may store a
+// request-scoped *slog.Logger (for example one carrying a request id). When
+// present, it becomes Ctx.Logger() for the request, so the framework's own
+// error logs use it too. modules/logger.RequestLogger stores its child
+// logger under this key (logger.ContextKey has the same value).
+const LoggerKey = "gonest.logger"
+
 // serve is the gin handler of the route.
 func (r *route) serve(gc *gin.Context) {
-	ctx := core.NewCtx(gc, r.info, r.m.opts.Logger)
+	ctx := core.NewCtx(gc, r.info, r.logger(gc))
 	g := r.m.globals.Load()
 	out, err := r.run(ctx, g)
 	if err != nil {
@@ -61,6 +69,17 @@ func (r *route) serve(gc *gin.Context) {
 		return
 	}
 	r.write(ctx, out)
+}
+
+// logger returns the request logger stored by middleware under LoggerKey,
+// else the application logger.
+func (r *route) logger(gc *gin.Context) *slog.Logger {
+	if v, ok := gc.Get(LoggerKey); ok {
+		if l, ok := v.(*slog.Logger); ok && l != nil {
+			return l
+		}
+	}
+	return r.m.opts.Logger
 }
 
 // run executes guards, interceptors, binding, pipes and the handler,

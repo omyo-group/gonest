@@ -116,7 +116,7 @@ func Example_logger() {
 		},
 	}
 	// docs:end
-	app, err := gonest.New(root, gonest.WithoutStartupLog(), gonest.WithGlobalInterceptors(RequestLoggerInterceptor))
+	app, err := gonest.New(root, gonest.WithoutStartupLog())
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -163,15 +163,3 @@ func (c *PingController) Ping(ctx *gonest.Ctx, in PingInput) (string, error) {
 type PingInput struct {
 	Fail bool `query:"fail"`
 }
-
-// docs:logger-interceptor
-
-// RequestLoggerInterceptor makes ctx.Logger() the request logger stored by
-// logger.RequestLogger, so the framework's own error logs carry request_id.
-// Install it with gonest.WithGlobalInterceptors or gonest.AppInterceptor.
-var RequestLoggerInterceptor = gonest.InterceptorFunc(func(ctx *gonest.Ctx, next gonest.Next) (any, error) {
-	ctx.SetLogger(logger.FromCtx(ctx))
-	return next()
-})
-
-// docs:end

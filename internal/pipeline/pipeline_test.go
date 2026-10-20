@@ -3,6 +3,7 @@ package pipeline
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -681,5 +682,64 @@ func TestCtxLoggerAndContext(t *testing.T) {
 	}
 	if !strings.Contains(h.logs.String(), "hello from handler") {
 		t.Fatal("ctx logger is not the mounter logger")
+	}
+}
+
+func TestCtxLoggerFromMiddleware(t *testing.T) {
+	h := newHarness(t, "")
+	var reqLogs syncBuffer
+	reqLogger := slog.New(slog.NewTextHandler(&reqLogs, nil)).With("request_id", "r-1")
+	mw := func(_, _ string) []gin.HandlerFunc {
+		return []gin.HandlerFunc{func(c *gin.Context) {
+			switch c.Query("mode") {
+			case "logger":
+				c.Set(LoggerKey, reqLogger)
+			case "nil":
+				c.Set(LoggerKey, (*slog.Logger)(nil))
+			case "wrong":
+				c.Set(LoggerKey, "not a logger")
+			}
+			c.Next()
+		}}
+	}
+	_, err := h.m.Mount(ctrlFunc(func(r core.Router) {
+		r.GET("/fail", core.Handle(func(*core.Ctx, core.Empty) (string, error) {
+			return "", errors.New("boom")
+		}))
+		r.GET("/guarded", core.Handle(func(*core.Ctx, core.Empty) (string, error) { return "ok", nil }),
+			core.UseGuards(core.GuardFunc(func(*core.Ctx) (bool, error) { return false, core.Internal("guard broke") })))
+	}), "test", mw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tests := []struct {
+		target  string
+		inReq   bool // logged with the request logger
+		message string
+	}{
+		{"/fail?mode=logger", true, "gonest: unhandled error"},
+		{"/guarded?mode=logger", true, "gonest: request failed"},
+		{"/fail?mode=nil", false, "gonest: unhandled error"},
+		{"/fail?mode=wrong", false, "gonest: unhandled error"},
+		{"/fail", false, "gonest: unhandled error"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.target, func(t *testing.T) {
+			before, beforeApp := reqLogs.String(), h.logs.String()
+			if rec := h.do(http.MethodGet, tt.target, ""); rec.Code != http.StatusInternalServerError {
+				t.Fatalf("status %d", rec.Code)
+			}
+			gotReq := strings.TrimPrefix(reqLogs.String(), before)
+			gotApp := strings.TrimPrefix(h.logs.String(), beforeApp)
+			if tt.inReq {
+				if !strings.Contains(gotReq, tt.message) || !strings.Contains(gotReq, "request_id=r-1") || gotApp != "" {
+					t.Fatalf("want record in request logger; request=%q app=%q", gotReq, gotApp)
+				}
+				return
+			}
+			if !strings.Contains(gotApp, tt.message) || gotReq != "" {
+				t.Fatalf("want record in app logger; request=%q app=%q", gotReq, gotApp)
+			}
+		})
 	}
 }
