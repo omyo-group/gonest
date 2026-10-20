@@ -808,7 +808,9 @@
             }
           },
           "timeout": {
-            "type": "string"
+            "type": "integer",
+            "format": "int64",
+            "description": "Duration in nanoseconds."
           }
         },
         "required": [

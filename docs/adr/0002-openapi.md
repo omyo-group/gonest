@@ -44,6 +44,9 @@ OpenAPI 3.0 models, router coupling or reflection helpers we do not need.
   minimum/maximum (numbers), minItems/maxItems (slices); `oneof` -> enum;
   `email`, `url`/`uri`, `uuid*` -> format; rules after `dive` apply to elements.
 - `doc` -> description, `example` and `default` -> converted to the field type.
+- `time.Duration` -> integer/int64 (nanoseconds, as encoding/json writes it)
+  in JSON schemas; string in parameters and form fields, which the binder
+  parses with `time.ParseDuration` (amended by C2).
 - Parameters from `path`/`query`/`header` (path always required, others when
   `validate` has `required`); body from `json` fields on POST/PUT/PATCH;
   `form` fields -> urlencoded, or multipart when a file field is present.
