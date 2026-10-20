@@ -438,6 +438,11 @@ func decodeJSON(r *http.Request, dst any) (bool, error) {
 				Message: "must be of type " + te.Type.String(),
 			}}).Wrap(err)
 		}
+		var tooLarge *http.MaxBytesError
+		if errors.As(err, &tooLarge) {
+			return false, core.NewHTTPError(http.StatusRequestEntityTooLarge,
+				fmt.Sprintf("request body exceeds %d bytes", tooLarge.Limit)).Wrap(err)
+		}
 		return false, core.BadRequest("invalid JSON body").Wrap(err)
 	}
 	if dec.More() {

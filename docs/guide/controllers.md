@@ -284,6 +284,13 @@ type UpdateInput struct {
 }
 ```
 
+Gonest does not limit the size of JSON bodies in v0.1 (form bodies are
+limited by `net/http` and Gin's `MaxMultipartMemory`). Limit them with Gin
+middleware, applied globally on `app.Engine()` or per route through
+`Module.Configure`, that replaces `c.Request.Body` with
+`http.MaxBytesReader(c.Writer, c.Request.Body, n)`: a body over the limit is
+answered with 413 and the message `request body exceeds n bytes`.
+
 ## Responses and errors
 
 What the controller above returns, request by request:

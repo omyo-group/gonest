@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/omyo/gonest/internal/core"
 )
 
@@ -522,5 +523,29 @@ func TestRuleMessages(t *testing.T) {
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("messages\n got %v\nwant %v", got, want)
+	}
+}
+
+// A body cut by http.MaxBytesReader (installed by middleware) is a 413, not
+// a malformed-JSON 400.
+func TestJSONBodyTooLarge(t *testing.T) {
+	h := newHarness(t, "")
+	limit := func(_, _ string) []gin.HandlerFunc {
+		return []gin.HandlerFunc{func(c *gin.Context) {
+			c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 16)
+			c.Next()
+		}}
+	}
+	if _, err := h.m.Mount(ctrlFunc(func(r core.Router) {
+		r.POST("/orgs/:org/users", echo[createIn]())
+	}), "test", limit); err != nil {
+		t.Fatal(err)
+	}
+	rec := h.do(http.MethodPost, "/orgs/5/users", `{"name":"`+strings.Repeat("a", 64)+`"}`)
+	if rec.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("status %d: %s", rec.Code, rec.Body)
+	}
+	if eb := decodeError(t, rec); eb.Message != "request body exceeds 16 bytes" || eb.Error != "Request Entity Too Large" {
+		t.Fatalf("%+v", eb)
 	}
 }
