@@ -10,7 +10,7 @@ one closure per route. A request then runs:
 - guards, interceptors, pipes from pre-built slices;
 - the compiled binder (reflection over a precomputed field plan, no tag
   parsing), then go-playground/validator if the input has `validate` tags;
-- the handler and `gin.Context.JSON`.
+- the handler, then the result encoded with Gin's JSON codec and written.
 
 There is no container lookup and no map lookup by type per request.
 
@@ -41,17 +41,23 @@ pairs, not single numbers.
 
 | Scenario | Gin median | Gonest median | Gin min | Gonest min | Overhead (min) | B/op Gin → Gonest | allocs Gin → Gonest |
 |---|---|---|---|---|---|---|---|
-| NoInput | 1452 ns | 1573 ns | 1240 ns | 1379 ns | +11% (+139 ns) | 1088 → 1120 | 11 → 12 |
-| PathQuery | 1878 ns | 2800 ns | 1700 ns | 2188 ns | +29% (+488 ns) | 1504 → 1568 | 14 → 17 |
-| PathQueryPtr | 1878 ns | 3034 ns | 1700 ns | 2251 ns | +32% (+551 ns) | 1504 → 1552 | 14 → 16 |
-| PathQueryNoValidatePtr | 1878 ns | 2300 ns | 1700 ns | 1894 ns | +11% (+194 ns) | 1504 → 1552 | 14 → 16 |
-| GuardInterceptor | 1990 ns | 2702 ns | 1721 ns | 2405 ns | +40% (+684 ns) | 1504 → 1656 | 14 → 19 |
-| JSONBody | 3077 ns | 3137 ns | 2540 ns | 2871 ns | +13% (+331 ns) | 2072 → 2120 | 21 → 23 |
+| NoInput | 1340 ns | 1416 ns | 1271 ns | 1276 ns | +0% (+5 ns) | 1088 → 1104 | 11 → 11 |
+| PathQuery | 1922 ns | 2497 ns | 1633 ns | 2124 ns | +30% (+491 ns) | 1504 → 1536 | 14 → 15 |
+| PathQueryPtr | 1922 ns | 2537 ns | 1633 ns | 2168 ns | +33% (+535 ns) | 1504 → 1536 | 14 → 15 |
+| PathQueryNoValidatePtr | 1922 ns | 2196 ns | 1633 ns | 1901 ns | +16% (+268 ns) | 1504 → 1536 | 14 → 15 |
+| GuardInterceptor | 2019 ns | 2730 ns | 1743 ns | 2379 ns | +36% (+636 ns) | 1504 → 1624 | 14 → 17 |
+| JSONBody | 3083 ns | 3280 ns | 2755 ns | 2761 ns | +0% (+6 ns) | 2072 → 2088 | 21 → 21 |
+
+(Measured after the v0.1 review fixes: the response is encoded with gin's
+JSON codec and written directly, which avoids the boxed `render.JSON` value
+and pays for the `*gonest.Ctx`; value inputs are bound into a recycled
+scratch struct.)
 
 ### Reading the numbers
 
-- **The pipeline itself** (NoInput) costs one allocation, the 32-byte
-  `*gonest.Ctx`, plus about 100 to 150 ns.
+- **The pipeline itself** (NoInput) allocates the 32-byte `*gonest.Ctx`
+  but saves the boxed renderer gin's `c.JSON` allocates, so it is level
+  with raw Gin in allocations and within the noise in time.
 - **Binding** path and query values by reflection costs about 200 ns over
   hand-written `strconv` calls (PathQueryNoValidatePtr).
 - **Validation** is the largest item when it is used: running
@@ -61,14 +67,15 @@ pairs, not single numbers.
   For JSON bodies both sides run the validator, and the difference shrinks to
   about 10%.
 - **Guards and interceptors** are interface calls over slices; the
-  interceptor chain allocates the `next` closures, hence +5 allocations
-  against a plain Gin middleware.
+  the interceptor chain allocates its per-request state and the `next`
+  closures (+2 allocations against a plain Gin middleware).
 - `Handle[*In, Out]` saves one allocation; in time it is within the noise.
 
 The design target in `CLAUDE.md` is under 5% overhead against equivalent raw
 Gin. On these micro-endpoints, which do no work at all, Gonest is **not**
-within 5%: it costs between about 0.1 µs (no input) and 0.7 µs (guard +
-interceptor + validated input) per request, a constant that does not grow
+within 5% once an input is bound and validated: it costs from nothing
+measurable (no input, JSON body) to about 0.6 µs (guard + interceptor +
+validated input) per request, mostly the validator, a constant that does not grow
 with the handler. For a handler that does any I/O (a database round trip is
 typically 100 µs or more), that constant is well under 1%. A2's handoff
 (`docs/handoff/a2.md`) has a breakdown of the pipeline benchmarks at the
