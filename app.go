@@ -35,6 +35,8 @@ type AppConfig struct {
 	Filters         []ExceptionFilter
 	// GlobalPrefix is prepended to every route path, e.g. "/api".
 	GlobalPrefix string
+	// BodyLimit caps JSON request bodies in bytes (default 1 MiB, see WithBodyLimit).
+	BodyLimit int64
 	// DisableStartupLog silences the route table logged at boot.
 	DisableStartupLog bool
 }
@@ -74,6 +76,16 @@ func WithGlobalFilters(f ...ExceptionFilter) Option {
 	return func(c *AppConfig) { c.Filters = append(c.Filters, f...) }
 }
 
+// DefaultBodyLimit is the JSON request body limit applied unless WithBodyLimit
+// says otherwise: 1 MiB.
+const DefaultBodyLimit int64 = 1 << 20
+
+// WithBodyLimit caps JSON request bodies at n bytes; larger requests get
+// 413 Request Entity Too Large. n <= 0 disables the limit. Default: DefaultBodyLimit.
+func WithBodyLimit(n int64) Option {
+	return func(c *AppConfig) { c.BodyLimit = n }
+}
+
 // WithGlobalPrefix prefixes every route, e.g. "/api/v1".
 func WithGlobalPrefix(p string) Option { return func(c *AppConfig) { c.GlobalPrefix = p } }
 
@@ -84,7 +96,7 @@ func WithoutStartupLog() Option { return func(c *AppConfig) { c.DisableStartupLo
 // provider, instantiates controllers, mounts routes and runs OnModuleInit and
 // OnApplicationBootstrap hooks. Any failure aborts startup with a descriptive error.
 func New(root *Module, opts ...Option) (*App, error) {
-	cfg := AppConfig{ShutdownTimeout: defaultShutdownTimeout}
+	cfg := AppConfig{ShutdownTimeout: defaultShutdownTimeout, BodyLimit: DefaultBodyLimit}
 	for _, o := range opts {
 		if o != nil {
 			o(&cfg)
@@ -103,6 +115,7 @@ func New(root *Module, opts ...Option) (*App, error) {
 		Engine:       cfg.Engine,
 		Logger:       cfg.Logger,
 		GlobalPrefix: cfg.GlobalPrefix,
+		BodyLimit:    cfg.BodyLimit,
 		Globals: pipeline.Globals{
 			Guards:       cfg.Guards,
 			Interceptors: cfg.Interceptors,

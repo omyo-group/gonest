@@ -93,15 +93,17 @@ type fieldName struct {
 
 // binder binds and validates one input type. It is immutable after compileBinder.
 type binder struct {
-	typ      reflect.Type // struct type
-	ptr      bool         // the handler input is *typ
-	trivial  bool         // no fields, no validation: use zero
-	zero     any
-	fields   []bfield
-	hasJSON  bool
-	reset    [][]int // exported non-body fields zeroed after JSON decoding
-	validate *validator.Validate
-	names    []fieldName
+	typ     reflect.Type // struct type
+	ptr     bool         // the handler input is *typ
+	trivial bool         // no fields, no validation: use zero
+	zero    any
+	fields  []bfield
+	hasJSON bool
+	// bodyLimit caps JSON bodies (http.MaxBytesReader); <= 0 means none.
+	bodyLimit int64
+	reset     [][]int // exported non-body fields zeroed after JSON decoding
+	validate  *validator.Validate
+	names     []fieldName
 
 	// scratch recycles the *typ values that value inputs are bound into.
 	// The handler receives a copy (boxing a struct into an interface
@@ -306,6 +308,9 @@ func (b *binder) bind(gc *gin.Context) (any, error) {
 	}
 	v := pv.Elem()
 	if b.hasJSON {
+		if b.bodyLimit > 0 && gc.Request.Body != nil && gc.Request.Body != http.NoBody {
+			gc.Request.Body = http.MaxBytesReader(gc.Writer, gc.Request.Body, b.bodyLimit)
+		}
 		decoded, err := decodeJSON(gc.Request, pv.Interface())
 		if err != nil {
 			return nil, err

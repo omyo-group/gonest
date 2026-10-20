@@ -284,12 +284,10 @@ type UpdateInput struct {
 }
 ```
 
-Gonest does not limit the size of JSON bodies in v0.1 (form bodies are
-limited by `net/http` and Gin's `MaxMultipartMemory`). Limit them with Gin
-middleware bound in `Module.Configure` (see [Middleware](pipeline.md#middleware))
-that replaces `c.Request.Body` with
-`http.MaxBytesReader(c.Writer, c.Request.Body, n)`: a body over the limit is
-answered with 413 and the message `request body exceeds n bytes`.
+JSON bodies are limited to 1 MiB by default (`gonest.DefaultBodyLimit`); a
+larger body is answered with 413 and the message `request body exceeds n bytes`.
+Change the limit with `gonest.WithBodyLimit(n)`, or pass `0` to disable it.
+Form bodies are limited by `net/http` and Gin's `MaxMultipartMemory`.
 
 ## Responses and errors
 

@@ -22,7 +22,7 @@ The source of truth is `internal/core` (re-exported by the root package
 | Context | `*Ctx`: `Gin`, `Request`, `Writer`, `Route`, `Logger`, `SetLogger`, `Param`, `Query`, `Header`, `Get`, `Set`, `SetStatus`; implements `context.Context`; `CtxValue[T]` |
 | Middleware | `Module.Configure: func(*MiddlewareConsumer, deps...)`; `Apply(...).Exclude(...).ForRoutes(...)`/`ForAllRoutes()`; `ForPath`, `ForRoute` |
 | Lifecycle | `OnModuleInit`, `OnApplicationBootstrap`, `OnModuleDestroy`, `BeforeApplicationShutdown`, `OnApplicationShutdown` |
-| App | `New(root, opts...)`, `Listen`, `Serve`, `Shutdown`, `Engine`, `Handler`, `Routes`; `Get[T]`, `GetNamed[T]`, `MustGet[T]`; options `WithEngine`, `WithLogger`, `WithShutdownTimeout`, `WithGlobalGuards/Interceptors/Pipes/Filters`, `WithGlobalPrefix`, `WithoutStartupLog` |
+| App | `New(root, opts...)`, `Listen`, `Serve`, `Shutdown`, `Engine`, `Handler`, `Routes`; `Get[T]`, `GetNamed[T]`, `MustGet[T]`; options `WithEngine`, `WithLogger`, `WithShutdownTimeout`, `WithGlobalGuards/Interceptors/Pipes/Filters`, `WithGlobalPrefix`, `WithBodyLimit` (default 1 MiB), `WithoutStartupLog` |
 
 ## Input binding rules (implemented by A2)
 

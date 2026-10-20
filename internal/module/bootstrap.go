@@ -22,6 +22,8 @@ type Options struct {
 	Logger *slog.Logger
 	// GlobalPrefix is prepended to every route path.
 	GlobalPrefix string
+	// BodyLimit caps JSON request bodies in bytes; <= 0 disables the limit.
+	BodyLimit int64
 	// Globals are the application-wide enhancers set through options; they
 	// come before the AppGuard/AppInterceptor/AppPipe/AppFilter providers.
 	Globals pipeline.Globals
@@ -91,6 +93,7 @@ func Bootstrap(ctx context.Context, root *core.Module, opts Options) (*Runtime, 
 		Logger:       log,
 		Routes:       routes,
 		GlobalPrefix: opts.GlobalPrefix,
+		BodyLimit:    opts.BodyLimit,
 	})
 	controllers, err := mountControllers(c, g, mounter, mw.For(opts.GlobalPrefix))
 	if err != nil {
