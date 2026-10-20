@@ -34,6 +34,11 @@ type Options struct {
 	UIPath string
 	// DisableUI serves only the JSON document.
 	DisableUI bool
+	// RouteOptions are applied to the document and UI routes, for example
+	// gonest.SetMetadata so that a global guard lets them through, or
+	// gonest.UseGuards to protect the documentation. Documentation options
+	// (Summary, Tags, ...) are irrelevant: the routes are always Hidden.
+	RouteOptions []gonest.RouteOption
 }
 
 // Module returns a module named "openapi" that serves the document of the
@@ -88,6 +93,9 @@ type docsController struct {
 
 // Routes implements gonest.Controller.
 func (c *docsController) Routes(r gonest.Router) {
+	if len(c.opts.RouteOptions) > 0 {
+		r.Use(c.opts.RouteOptions...)
+	}
 	r.GET(c.opts.JSONPath, gonest.HandleRaw(c.serveJSON), gonest.Hidden())
 	if c.opts.DisableUI {
 		return

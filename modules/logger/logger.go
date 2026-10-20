@@ -14,7 +14,8 @@ import (
 
 const (
 	// ContextKey is the gin key under which RequestLogger stores the
-	// per-request *slog.Logger.
+	// per-request *slog.Logger. The framework uses a logger found under this
+	// key as Ctx.Logger(), so its own error logs carry request_id.
 	ContextKey = "gonest.logger"
 	// RequestIDKey is the gin key holding the request id string.
 	RequestIDKey = "gonest.request_id"
@@ -78,7 +79,8 @@ func ForRoot(opts Options) *gonest.Module {
 
 // RequestLogger returns gin middleware that assigns or propagates a request id
 // (X-Request-ID, generated when missing and echoed in the response), stores a
-// child logger carrying request_id under ContextKey, and logs one record per
+// child logger carrying request_id under ContextKey (it becomes Ctx.Logger()
+// for routes behind the middleware), and logs one record per
 // request: method, path, status, latency, bytes and client_ip. The level is
 // error for 5xx, warn for 4xx, info otherwise.
 func RequestLogger(l *slog.Logger) gin.HandlerFunc {

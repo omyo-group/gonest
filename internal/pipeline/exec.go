@@ -3,11 +3,13 @@ package pipeline
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"reflect"
 	"runtime/debug"
 
 	"github.com/gin-gonic/gin"
+	ginjson "github.com/gin-gonic/gin/codec/json"
 	"github.com/omyo/gonest/internal/core"
 )
 
@@ -48,9 +50,16 @@ func (p *panicError) Unwrap() error {
 	return nil
 }
 
+// LoggerKey is the gin context key under which middleware may store a
+// request-scoped *slog.Logger (for example one carrying a request id). When
+// present, it becomes Ctx.Logger() for the request, so the framework's own
+// error logs use it too. modules/logger.RequestLogger stores its child
+// logger under this key (logger.ContextKey has the same value).
+const LoggerKey = "gonest.logger"
+
 // serve is the gin handler of the route.
 func (r *route) serve(gc *gin.Context) {
-	ctx := core.NewCtx(gc, r.info, r.m.opts.Logger)
+	ctx := core.NewCtx(gc, r.info, r.logger(gc))
 	g := r.m.globals.Load()
 	out, err := r.run(ctx, g)
 	if err != nil {
@@ -60,7 +69,18 @@ func (r *route) serve(gc *gin.Context) {
 	if r.raw {
 		return
 	}
-	r.write(ctx, out)
+	r.write(ctx, g, out)
+}
+
+// logger returns the request logger stored by middleware under LoggerKey,
+// else the application logger.
+func (r *route) logger(gc *gin.Context) *slog.Logger {
+	if v, ok := gc.Get(LoggerKey); ok {
+		if l, ok := v.(*slog.Logger); ok && l != nil {
+			return l
+		}
+	}
+	return r.m.opts.Logger
 }
 
 // run executes guards, interceptors, binding, pipes and the handler,
@@ -169,8 +189,15 @@ func (r *route) runPipes(ctx *core.Ctx, pipes []core.Pipe, in any) (any, error) 
 	return in, nil
 }
 
-// write renders a successful result.
-func (r *route) write(ctx *core.Ctx, out any) {
+// jsonContentType is the Content-Type gin's JSON renderer writes. Shared and
+// never modified, like gin's own, so writing it does not allocate.
+var jsonContentType = []string{"application/json; charset=utf-8"}
+
+// write renders a successful result. The value is encoded before anything is
+// written (with gin's JSON codec, as gin.Context.JSON does), so a value that
+// cannot be encoded (NaN, a channel, a failing MarshalJSON) goes through the
+// exception filters as a 500 instead of a silent empty 200.
+func (r *route) write(ctx *core.Ctx, g *Globals, out any) {
 	gc := ctx.Gin()
 	status := ctx.StatusOverride()
 	if status == 0 {
@@ -181,7 +208,30 @@ func (r *route) write(ctx *core.Ctx, out any) {
 		gc.Writer.WriteHeaderNow()
 		return
 	}
-	gc.JSON(status, out)
+	body, err := ginjson.API.Marshal(out)
+	if err != nil {
+		r.handleError(ctx, g, fmt.Errorf("gonest: encoding the response of %s: %w", r.info.Handler.Name, err))
+		return
+	}
+	gc.Writer.Header()["Content-Type"] = jsonContentType
+	gc.Status(status)
+	if !bodyAllowedForStatus(status) {
+		gc.Writer.WriteHeaderNow()
+		return
+	}
+	_, _ = gc.Writer.Write(body)
+}
+
+// bodyAllowedForStatus mirrors gin's rule (and net/http's): 1xx, 204 and 304
+// responses have no body.
+func bodyAllowedForStatus(status int) bool {
+	switch {
+	case status >= 100 && status <= 199:
+		return false
+	case status == http.StatusNoContent, status == http.StatusNotModified:
+		return false
+	}
+	return true
 }
 
 // handleError runs the exception filters: route, controller, global, then the

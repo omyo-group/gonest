@@ -127,7 +127,8 @@ func (g *schemaGen) base(t reflect.Type) *Schema {
 	case t == timeType:
 		return &Schema{Type: SchemaType{"string"}, Format: "date-time"}
 	case t == durationType:
-		return &Schema{Type: SchemaType{"string"}}
+		// encoding/json writes time.Duration as its int64 nanosecond count.
+		return &Schema{Type: SchemaType{"integer"}, Format: "int64", Description: "Duration in nanoseconds."}
 	case t == rawMessageType:
 		return &Schema{}
 	case t == fileHeaderType.Elem():
@@ -308,6 +309,46 @@ func (g *schemaGen) fieldSchema(sf reflect.StructField, nullable bool) *Schema {
 	return s
 }
 
+// paramSchema is fieldSchema for values parsed from text (path, query,
+// header and form fields). The binder parses time.Duration there with
+// time.ParseDuration, so durations are strings such as "1h30m", unlike in
+// JSON where they are integers.
+func (g *schemaGen) paramSchema(sf reflect.StructField) *Schema {
+	s := g.fieldSchema(sf, false)
+	t := sf.Type
+	for t.Kind() == reflect.Pointer {
+		t = t.Elem()
+	}
+	textDuration := func(s *Schema) {
+		s.Type, s.Format = SchemaType{"string"}, ""
+		if s.Description == "Duration in nanoseconds." {
+			s.Description = "Duration such as 1h30m (Go time.ParseDuration syntax)."
+		}
+	}
+	switch {
+	case t == durationType:
+		textDuration(s)
+		if v, ok := sf.Tag.Lookup("example"); ok {
+			s.Example = v
+		}
+		if v, ok := sf.Tag.Lookup("default"); ok {
+			s.Default = v
+		}
+	case t.Kind() == reflect.Slice && s.Items != nil && derefType(t.Elem()) == durationType:
+		items := *s.Items
+		textDuration(&items)
+		s.Items = &items
+	}
+	return s
+}
+
+func derefType(t reflect.Type) reflect.Type {
+	for t.Kind() == reflect.Pointer {
+		t = t.Elem()
+	}
+	return t
+}
+
 // withDescription sets the description; for a bare $ref it wraps the
 // reference (3.1 allows siblings of $ref).
 func withDescription(s *Schema, d string) *Schema {
@@ -321,7 +362,17 @@ func convertValue(t reflect.Type, v string) any {
 	for t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
-	if t == timeType || t == durationType {
+	if t == timeType {
+		return v
+	}
+	if t == durationType {
+		// "5s" in a tag documents a JSON duration as 5000000000.
+		if d, err := time.ParseDuration(v); err == nil {
+			return int64(d)
+		}
+		if n, err := strconv.ParseInt(v, 10, 64); err == nil {
+			return n
+		}
 		return v
 	}
 	switch t.Kind() {

@@ -127,7 +127,7 @@ func TestSchemaRules(t *testing.T) {
 	}
 	if !reflect.DeepEqual(p["exj"].Example, map[string]any{"a": "b"}) || p["exb"].Example != "yes" ||
 		!reflect.DeepEqual(p["exarr"].Example, []any{"x"}) || p["exu"].Example != uint64(3) ||
-		p["exf"].Example != 1.5 || p["ext"].Example != "5s" || p["b"].Default != true {
+		p["exf"].Example != 1.5 || p["ext"].Example != int64(5e9) || p["ext"].Type[0] != "integer" || p["b"].Default != true {
 		t.Errorf("examples wrong: %+v", p)
 	}
 	if p["exp"].Example != int64(4) || p["exp"].Default != int64(5) {
@@ -279,7 +279,7 @@ func TestSchemaOfNullableAndRefFields(t *testing.T) {
 	if _, ok := u.Properties["Secret"]; ok {
 		t.Error("json:\"-\" field present")
 	}
-	if u.Properties["timeout"].Type[0] != "string" {
+	if u.Properties["timeout"].Type[0] != "integer" || u.Properties["timeout"].Format != "int64" {
 		t.Errorf("duration: %+v", u.Properties["timeout"])
 	}
 	if !reflect.DeepEqual(u.Required, []string{"email"}) {

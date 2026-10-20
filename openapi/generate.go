@@ -298,7 +298,7 @@ func (b *builder) parameters(fs []field, pathParams []string) []Parameter {
 			continue
 		}
 		declared[key] = true
-		s := b.g.fieldSchema(f.sf, false)
+		s := b.g.paramSchema(f.sf)
 		p := Parameter{
 			Name:        f.name,
 			In:          in,
@@ -353,7 +353,7 @@ func (b *builder) requestBody(in reflect.Type, fs []field) *RequestBody {
 					s.Description = d
 				}
 			} else {
-				s = b.g.fieldSchema(f.sf, false)
+				s = b.g.paramSchema(f.sf)
 			}
 			obj.Properties[f.name] = s
 			if hasRule(f.sf.Tag.Get("validate"), "required") {

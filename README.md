@@ -135,9 +135,10 @@ Design notes: [contracts](docs/contracts.md) and the
 
 ## Performance
 
-Per request, Gonest adds one 32-byte allocation and about 0.1 µs over a raw
-Gin handler for the pipeline itself, plus about 0.2 µs for reflective input
-binding and about 0.3 µs when `validate` tags are present. These are
+Per request, the pipeline itself is level with a raw Gin handler (same
+allocation count, difference within the noise); reflective input binding
+adds about 0.25 µs and the validator about 0.25 µs when `validate` tags are
+present. These are
 constants, independent of the handler; see
 [performance](docs/guide/performance.md) for the benchmark and its caveats.
 

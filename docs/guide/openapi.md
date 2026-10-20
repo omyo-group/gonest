@@ -59,6 +59,11 @@ request for it returns the cached bytes. The module's own routes are hidden
 from the document and follow `gonest.WithGlobalPrefix`. If a route requires
 a security scheme that is not defined, `gonest.New` fails.
 
+Global guards apply to the documentation routes too. `RouteOptions` adds
+route options to them: `gonest.SetMetadata(...)` to let a global guard with
+a "public" escape hatch (see [Pipeline](pipeline.md#global-guard-with-a-public-escape-hatch))
+through, or `gonest.UseGuards(...)` to protect the documentation.
+
 ## What ends up in the document
 
 | Source | OpenAPI |
@@ -69,6 +74,7 @@ a security scheme that is not defined, `gonest.New` fails.
 | `Out` | success response schema; nothing for `gonest.NoContent` and raw handlers |
 | `validate` rules | `required`, `minLength`/`maxLength`, `minimum`/`maximum`, `minItems`/`maxItems`, `enum` (`oneof`), `format` (`email`, `uri`, `uuid`) |
 | `doc`, `example`, `default` tags | description, example, default |
+| `time.Duration` | integer (int64 nanoseconds, as `encoding/json` writes it) in JSON bodies and outputs; string such as `1h30m` in parameters and form fields |
 | `gonest.Summary`, `Description`, `Tags`, `Deprecated` | operation fields (tags default to the first path segment) |
 | `gonest.Security("bearer")` | security requirement; several names are alternatives |
 | `gonest.Responds(status, desc, body)` | extra documented responses |
@@ -137,5 +143,3 @@ DELETE /orgs/{org}/articles/{id} ArticlesController.Delete [204 400 500] false
   metadata, so they add no 401/403 responses or security requirements.
 - No callbacks, links, webhooks, discriminators or OAuth2 flows; no cookie
   parameters.
-- `time.Duration` is documented as a string although `encoding/json` writes
-  it as an integer.

@@ -3,6 +3,8 @@ package pipeline
 import (
 	"errors"
 	"fmt"
+	"log/slog"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -681,5 +683,111 @@ func TestCtxLoggerAndContext(t *testing.T) {
 	}
 	if !strings.Contains(h.logs.String(), "hello from handler") {
 		t.Fatal("ctx logger is not the mounter logger")
+	}
+}
+
+func TestCtxLoggerFromMiddleware(t *testing.T) {
+	h := newHarness(t, "")
+	var reqLogs syncBuffer
+	reqLogger := slog.New(slog.NewTextHandler(&reqLogs, nil)).With("request_id", "r-1")
+	mw := func(_, _ string) []gin.HandlerFunc {
+		return []gin.HandlerFunc{func(c *gin.Context) {
+			switch c.Query("mode") {
+			case "logger":
+				c.Set(LoggerKey, reqLogger)
+			case "nil":
+				c.Set(LoggerKey, (*slog.Logger)(nil))
+			case "wrong":
+				c.Set(LoggerKey, "not a logger")
+			}
+			c.Next()
+		}}
+	}
+	_, err := h.m.Mount(ctrlFunc(func(r core.Router) {
+		r.GET("/fail", core.Handle(func(*core.Ctx, core.Empty) (string, error) {
+			return "", errors.New("boom")
+		}))
+		r.GET("/guarded", core.Handle(func(*core.Ctx, core.Empty) (string, error) { return "ok", nil }),
+			core.UseGuards(core.GuardFunc(func(*core.Ctx) (bool, error) { return false, core.Internal("guard broke") })))
+	}), "test", mw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tests := []struct {
+		target  string
+		inReq   bool // logged with the request logger
+		message string
+	}{
+		{"/fail?mode=logger", true, "gonest: unhandled error"},
+		{"/guarded?mode=logger", true, "gonest: request failed"},
+		{"/fail?mode=nil", false, "gonest: unhandled error"},
+		{"/fail?mode=wrong", false, "gonest: unhandled error"},
+		{"/fail", false, "gonest: unhandled error"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.target, func(t *testing.T) {
+			before, beforeApp := reqLogs.String(), h.logs.String()
+			if rec := h.do(http.MethodGet, tt.target, ""); rec.Code != http.StatusInternalServerError {
+				t.Fatalf("status %d", rec.Code)
+			}
+			gotReq := strings.TrimPrefix(reqLogs.String(), before)
+			gotApp := strings.TrimPrefix(h.logs.String(), beforeApp)
+			if tt.inReq {
+				if !strings.Contains(gotReq, tt.message) || !strings.Contains(gotReq, "request_id=r-1") || gotApp != "" {
+					t.Fatalf("want record in request logger; request=%q app=%q", gotReq, gotApp)
+				}
+				return
+			}
+			if !strings.Contains(gotApp, tt.message) || gotReq != "" {
+				t.Fatalf("want record in app logger; request=%q app=%q", gotReq, gotApp)
+			}
+		})
+	}
+}
+
+type badJSON struct{}
+
+func (badJSON) MarshalJSON() ([]byte, error) { return nil, errors.New("cannot encode") }
+
+// An Out value that encoding/json rejects is a logged 500, not an empty 200.
+func TestResponseEncodingFailure(t *testing.T) {
+	h := newHarness(t, "")
+	h.mount(func(r core.Router) {
+		r.GET("/nan", core.Handle(func(*core.Ctx, core.Empty) (float64, error) { return math.NaN(), nil }))
+		r.GET("/bad", core.Handle(func(*core.Ctx, core.Empty) (badJSON, error) { return badJSON{}, nil }))
+		r.GET("/ok", core.Handle(func(c *core.Ctx, _ core.Empty) (map[string]int, error) {
+			c.SetStatus(http.StatusAccepted)
+			return map[string]int{"a": 1}, nil
+		}))
+	})
+	for _, path := range []string{"/nan", "/bad"} {
+		rec := h.do(http.MethodGet, path, "")
+		if rec.Code != http.StatusInternalServerError || decodeError(t, rec).Message != "Internal Server Error" {
+			t.Fatalf("%s: %d %s", path, rec.Code, rec.Body)
+		}
+	}
+	if logs := h.logs.String(); strings.Count(logs, "gonest: encoding the response of") != 2 {
+		t.Fatalf("encoding failures not logged: %s", logs)
+	}
+	rec := h.do(http.MethodGet, "/ok", "")
+	if rec.Code != http.StatusAccepted || rec.Body.String() != `{"a":1}` || rec.Header().Get("Content-Type") != "application/json; charset=utf-8" {
+		t.Fatalf("%d %q %v", rec.Code, rec.Body, rec.Header())
+	}
+}
+
+func TestWriteStatusWithoutBody(t *testing.T) {
+	h := newHarness(t, "")
+	h.mount(func(r core.Router) {
+		r.GET("/nm", core.Handle(func(*core.Ctx, core.Empty) (string, error) { return "x", nil }), core.Status(http.StatusNotModified))
+		r.GET("/nc", core.Handle(func(c *core.Ctx, _ core.Empty) (string, error) {
+			c.SetStatus(http.StatusNoContent)
+			return "x", nil
+		}))
+	})
+	for _, p := range []string{"/nm", "/nc"} {
+		rec := h.do(http.MethodGet, p, "")
+		if rec.Body.Len() != 0 || (rec.Code != http.StatusNotModified && rec.Code != http.StatusNoContent) {
+			t.Fatalf("%s: %d %q", p, rec.Code, rec.Body)
+		}
 	}
 }

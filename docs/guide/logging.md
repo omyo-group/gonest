@@ -28,7 +28,8 @@ error logs (unhandled errors, 5xx `HTTPError`s, recovered panics).
   `request_id`, and writes one record per request with method, path, status,
   latency, bytes and client IP, at error level for 5xx and warn for 4xx.
 - `logger.FromCtx(ctx)`: the request logger stored by the middleware, or
-  `ctx.Logger()` when the middleware did not run.
+  `ctx.Logger()` when the middleware did not run. Inside the pipeline the two
+  are the same logger unless the code called `ctx.SetLogger`.
 
 <!-- snippet: examples/guide/config_test.go#logger-module -->
 ```go
@@ -67,20 +68,11 @@ func (c *PingController) Ping(ctx *gonest.Ctx, in PingInput) (string, error) {
 }
 ```
 
-`RequestLogger` does not change `ctx.Logger()`, which the framework uses for
-its own error logs. To get `request_id` on those too, install an
-interceptor:
-
-<!-- snippet: examples/guide/config_test.go#logger-interceptor -->
-```go
-// RequestLoggerInterceptor makes ctx.Logger() the request logger stored by
-// logger.RequestLogger, so the framework's own error logs carry request_id.
-// Install it with gonest.WithGlobalInterceptors or gonest.AppInterceptor.
-var RequestLoggerInterceptor = gonest.InterceptorFunc(func(ctx *gonest.Ctx, next gonest.Next) (any, error) {
-	ctx.SetLogger(logger.FromCtx(ctx))
-	return next()
-})
-```
+The logger that `RequestLogger` stores (under `logger.ContextKey`) also
+becomes `ctx.Logger()` for the request, so the framework's own error logs
+(unhandled errors, 5xx `HTTPError`s, panics, including those raised by
+guards) carry `request_id` as well. Any Gin middleware can do the same by
+storing a `*slog.Logger` under the key `"gonest.logger"`.
 
 Two requests, the second failing, produce (time and latency normalised):
 
@@ -94,9 +86,6 @@ Two requests, the second failing, produce (time and latency normalised):
 
 The client of the failing request only receives
 `{"statusCode":500,"message":"Internal Server Error","error":"Internal Server Error"}`.
-
-Guards run before interceptors, so errors raised by guards are still logged
-with the application logger.
 
 ## In the SaaS example
 

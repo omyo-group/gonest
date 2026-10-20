@@ -56,6 +56,9 @@ The source of truth is `internal/core` (re-exported by the root package
 - Errors go through filters; the default filter writes `ErrorBody`. Non-HTTP
   errors become 500 "Internal Server Error" and are logged with the request
   logger. Panics are recovered and treated as 500.
+- The request logger (`Ctx.Logger()`) is the `*slog.Logger` stored by gin
+  middleware under the gin key `"gonest.logger"` (as `logger.RequestLogger`
+  does), else the application logger.
 - A guard returning `false, nil` produces 403 "Forbidden resource".
 
 ## Internal seams
