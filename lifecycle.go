@@ -31,10 +31,14 @@ func newEngine() *gin.Engine {
 }
 
 // Listen serves HTTP on addr until SIGINT or SIGTERM, then shuts down gracefully
-// and runs shutdown hooks. It returns nil after a clean shutdown.
+// and runs shutdown hooks. It returns nil after a clean shutdown. A second
+// signal during the graceful shutdown terminates the process immediately.
 func (a *App) Listen(addr string) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	// Restore default signal handling once the first signal arrived, so a
+	// second Ctrl+C is not swallowed while hooks or slow requests drain.
+	go func() { <-ctx.Done(); stop() }()
 	srv := &http.Server{
 		Addr:              addr,
 		Handler:           a.cfg.Engine,
