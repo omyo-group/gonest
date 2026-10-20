@@ -43,3 +43,24 @@ proposals.
 - **Impact:** docs/contracts.md (lead), B1 (middleware matching), C1 (guide).
 - **Workaround in use:** behaviour implemented and tested in internal/pipeline.
 - **Decision:** (lead) accepted. Documented in docs/contracts.md; B1 strips GlobalPrefix before matching RouteSpecs (NestJS semantics).
+
+### Framework logger is always registered as a fallback (agent B1, 2026-10-20)
+
+- **Problem:** docs/contracts.md and prompts/B1.md say the framework
+  `*slog.Logger` is registered "unless the module graph provides one". Taken
+  literally, a module that provides a private (unexported) logger, such as
+  `AppModule` in `examples_contract_test.go` (`gonest.Value(slog.Default())`
+  in the root, not exported), removes the framework logger for every other
+  module: `UsersService` in "users" then fails with "not visible".
+- **Proposal (documentation only):** the framework `*slog.Logger` (from
+  `WithLogger`, else `slog.Default()`) is always registered with a nil owner.
+  The container already prefers the module's own provider, then a single
+  visible module provider, over framework providers, so a module-provided
+  logger (e.g. `logger.ForRoot`, global) still wins wherever it is visible;
+  modules that cannot see one get the framework logger instead of an error.
+  The application's own logger (pipeline, startup log) is the `*slog.Logger`
+  resolved from the root module. Reword contracts.md "Framework providers"
+  accordingly.
+- **Impact:** docs/contracts.md (lead), C1 guide wording. No code change elsewhere.
+- **Workaround in use:** implemented as proposed in internal/module.
+- **Decision:** (lead)
