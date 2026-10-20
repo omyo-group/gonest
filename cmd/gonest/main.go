@@ -1,25 +1,20 @@
 // Command gonest scaffolds Gonest projects and components.
 //
-// Owner: agent A4.
+// Usage:
+//
+//	gonest new <name> [--module path] [--dir path] [--gonest-replace path] [--minimal]
+//	gonest generate|g <component> <name> [--path dir] [--flat] [--dry-run] [--force]
+//	gonest info
 package main
 
 import (
 	"fmt"
 	"os"
-
-	"github.com/spf13/cobra"
 )
 
 func main() {
-	root := &cobra.Command{
-		Use:   "gonest",
-		Short: "Scaffold Gonest projects and components",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return cmd.Help()
-		},
-	}
-	if err := root.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+	if err := run(os.Args[1:], os.Stdout, os.Stderr, "."); err != nil {
+		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)
 	}
 }

@@ -1,0 +1,29 @@
+// Command my-app is the entry point of the my-app service.
+package main
+
+import (
+	"log"
+	"os"
+
+	"github.com/omyo/gonest"
+
+	"github.com/acme/my-app/internal/app"
+)
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run() error {
+	application, err := gonest.New(app.AppModule)
+	if err != nil {
+		return err
+	}
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	return application.Listen(":" + port)
+}

@@ -1,0 +1,31 @@
+package {{.Pkg}}
+
+import "github.com/omyo/gonest"
+
+// {{.Type}} exposes the {{.Base.Kebab}} routes.
+type {{.Type}} struct {
+{{- if .WithService}}
+	service *{{.ServiceType}}
+{{- end}}
+}
+
+// New{{.Type}} is the constructor registered in the module's Controllers.
+func New{{.Type}}({{if .WithService}}service *{{.ServiceType}}{{end}}) *{{.Type}} {
+	return &{{.Type}}{ {{- if .WithService}}service: service{{end -}} }
+}
+
+// Routes implements gonest.Controller.
+func (c *{{.Type}}) Routes(r gonest.Router) {
+	r.Prefix("/{{.Base.Kebab}}")
+	r.Use(gonest.Tags("{{.Base.Kebab}}"))
+	r.GET("", gonest.Handle(c.FindAll), gonest.Summary("List {{.Base.Kebab}}"))
+}
+
+// FindAll handles GET /{{.Base.Kebab}}.
+func (c *{{.Type}}) FindAll(ctx *gonest.Ctx, _ gonest.Empty) ([]string, error) {
+{{- if .WithService}}
+	return c.service.FindAll(ctx), nil
+{{- else}}
+	return []string{}, nil
+{{- end}}
+}

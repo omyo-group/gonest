@@ -1,0 +1,30 @@
+package user_profile
+
+import (
+	"errors"
+	"testing"
+
+	"github.com/omyo/gonest"
+)
+
+var _ gonest.Interceptor = (*UserProfileInterceptor)(nil)
+
+func TestUserProfileInterceptorIntercept(t *testing.T) {
+	wantErr := errors.New("boom")
+	tests := []struct {
+		name   string
+		result any
+		err    error
+	}{
+		{name: "passes result", result: "ok"},
+		{name: "passes error", err: wantErr},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := NewUserProfileInterceptor().Intercept(nil, func() (any, error) { return tc.result, tc.err })
+			if got != tc.result || !errors.Is(err, tc.err) {
+				t.Fatalf("Intercept = %v, %v; want %v, %v", got, err, tc.result, tc.err)
+			}
+		})
+	}
+}

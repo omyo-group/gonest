@@ -1,0 +1,24 @@
+package app
+
+import "github.com/omyo/gonest"
+
+// HealthDTO is the body of GET /health.
+type HealthDTO struct {
+	Status string `json:"status"`
+}
+
+// HealthController exposes the liveness probe.
+type HealthController struct{}
+
+// NewHealthController is the constructor registered in AppModule.
+func NewHealthController() *HealthController { return &HealthController{} }
+
+// Routes implements gonest.Controller.
+func (c *HealthController) Routes(r gonest.Router) {
+	r.GET("/health", gonest.Handle(c.Check), gonest.Summary("Liveness probe"), gonest.Tags("health"))
+}
+
+// Check handles GET /health.
+func (c *HealthController) Check(_ *gonest.Ctx, _ gonest.Empty) (HealthDTO, error) {
+	return HealthDTO{Status: "ok"}, nil
+}

@@ -1,0 +1,9 @@
+package {{.Pkg}}
+
+import "testing"
+
+func Test{{.Type}}(t *testing.T) {
+	if {{.Type}}.Name != "{{.Base.Kebab}}" {
+		t.Fatalf("unexpected module name %q", {{.Type}}.Name)
+	}
+}

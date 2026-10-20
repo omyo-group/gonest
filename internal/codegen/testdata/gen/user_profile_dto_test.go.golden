@@ -1,0 +1,21 @@
+package user_profile
+
+import (
+	"encoding/json"
+	"testing"
+)
+
+func TestUserProfileDTOJSON(t *testing.T) {
+	in := UserProfileDTO{ID: 1, Name: "demo"}
+	data, err := json.Marshal(in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out UserProfileDTO
+	if err := json.Unmarshal(data, &out); err != nil {
+		t.Fatal(err)
+	}
+	if out != in {
+		t.Fatalf("round trip = %+v, want %+v", out, in)
+	}
+}

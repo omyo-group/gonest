@@ -1,0 +1,16 @@
+package user_profile
+
+import (
+	"errors"
+	"testing"
+
+	"github.com/omyo/gonest"
+)
+
+var _ gonest.ExceptionFilter = (*UserProfileFilter)(nil)
+
+func TestUserProfileFilterCatchIgnoresOtherErrors(t *testing.T) {
+	if NewUserProfileFilter().Catch(nil, errors.New("plain error")) {
+		t.Fatal("Catch handled a non-HTTP error")
+	}
+}

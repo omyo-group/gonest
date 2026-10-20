@@ -1,0 +1,57 @@
+// Command {{.Name.Kebab}} is the entry point of the {{.Name.Kebab}} service.
+package main
+
+import (
+{{- if .Minimal}}
+	"log"
+	"os"
+
+	"github.com/omyo/gonest"
+
+	"{{.Module}}/internal/app"
+)
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run() error {
+	application, err := gonest.New(app.AppModule)
+	if err != nil {
+		return err
+	}
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	return application.Listen(":" + port)
+}
+{{- else}}
+	"fmt"
+	"log"
+
+	"github.com/omyo/gonest"
+
+	"{{.Module}}/internal/app"
+)
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run() error {
+	application, err := gonest.New(app.AppModule)
+	if err != nil {
+		return err
+	}
+	cfg, err := gonest.Get[*app.AppConfig](application)
+	if err != nil {
+		return err
+	}
+	return application.Listen(fmt.Sprintf(":%d", cfg.Port))
+}
+{{- end}}

@@ -1,0 +1,12 @@
+// Package {{.Pkg}} contains the {{.Base.Kebab}} feature module.
+package {{.Pkg}}
+
+import "github.com/omyo/gonest"
+
+// {{.Type}} groups the providers and controllers of the {{.Base.Kebab}} feature.
+var {{.Type}} = &gonest.Module{
+	Name:        "{{.Base.Kebab}}",
+	Providers:   []gonest.Provider{},
+	Controllers: []any{},
+	Exports:     []gonest.Token{},
+}

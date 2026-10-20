@@ -1,0 +1,21 @@
+package {{.Pkg}}
+
+import (
+	"encoding/json"
+	"testing"
+)
+
+func Test{{.Base.Pascal}}DTOJSON(t *testing.T) {
+	in := {{.Base.Pascal}}DTO{ID: 1, Name: "demo"}
+	data, err := json.Marshal(in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out {{.Base.Pascal}}DTO
+	if err := json.Unmarshal(data, &out); err != nil {
+		t.Fatal(err)
+	}
+	if out != in {
+		t.Fatalf("round trip = %+v, want %+v", out, in)
+	}
+}

@@ -1,0 +1,17 @@
+package {{.Pkg}}
+
+import "github.com/omyo/gonest"
+
+// {{.Type}} wraps handler execution. Code before next() runs before the
+// handler, code after it can inspect or replace the result.
+type {{.Type}} struct{}
+
+// New{{.Type}} is the constructor registered in the module's Providers.
+func New{{.Type}}() *{{.Type}} {
+	return &{{.Type}}{}
+}
+
+// Intercept implements gonest.Interceptor.
+func (i *{{.Type}}) Intercept(_ *gonest.Ctx, next gonest.Next) (any, error) {
+	return next()
+}

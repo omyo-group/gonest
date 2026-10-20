@@ -1,0 +1,10 @@
+package app
+
+// AppConfig is loaded by config.ForRoot from defaults, .env and the
+// environment (highest precedence). Inject *AppConfig where needed.
+type AppConfig struct {
+	// Env is the deployment environment.
+	Env string `env:"APP_ENV" default:"development"`
+	// Port is the HTTP listen port.
+	Port int `env:"PORT" default:"8080" validate:"min=1,max=65535"`
+}

@@ -1,0 +1,13 @@
+package user_profile
+
+// UserProfileDTO is returned to clients.
+type UserProfileDTO struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+// CreateUserProfileInput is the request body of a create handler. Tags
+// bind it (json) and validate it (validate).
+type CreateUserProfileInput struct {
+	Name string `json:"name" validate:"required,min=2"`
+}

@@ -1,0 +1,13 @@
+package {{.Pkg}}
+
+// {{.Base.Pascal}}DTO is returned to clients.
+type {{.Base.Pascal}}DTO struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+// Create{{.Base.Pascal}}Input is the request body of a create handler. Tags
+// bind it (json) and validate it (validate).
+type Create{{.Base.Pascal}}Input struct {
+	Name string `json:"name" validate:"required,min=2"`
+}

@@ -1,0 +1,16 @@
+package {{.Pkg}}
+
+import (
+	"testing"
+
+	"github.com/omyo/gonest"
+)
+
+var _ gonest.Pipe = (*{{.Type}})(nil)
+
+func Test{{.Type}}Transform(t *testing.T) {
+	got, err := New{{.Type}}().Transform(nil, "value", gonest.ArgMeta{})
+	if err != nil || got != "value" {
+		t.Fatalf("Transform = %v, %v; want value, nil", got, err)
+	}
+}
