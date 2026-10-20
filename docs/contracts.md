@@ -71,8 +71,11 @@ paths in `Configure` are relative to the global prefix (NestJS semantics), so
 the module package strips the prefix before matching.
 
 Framework providers registered by `App` with a nil owner (visible everywhere):
-`*core.RouteTable` (as `*gonest.RouteTable`) and `*slog.Logger` (unless the
-module graph provides one, e.g. via `logger.ForRoot`).
+`*core.RouteTable` (as `*gonest.RouteTable`) and `*slog.Logger` (from
+`WithLogger`, else `slog.Default()`). Framework providers are fallbacks: a
+module's own provider, or a single visible module provider (for example the
+global `logger.ForRoot`), always wins. The application's own logger is the
+`*slog.Logger` resolved from the root module.
 
 ## Bootstrap order (implemented by B1)
 

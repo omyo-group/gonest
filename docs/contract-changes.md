@@ -63,4 +63,4 @@ proposals.
   accordingly.
 - **Impact:** docs/contracts.md (lead), C1 guide wording. No code change elsewhere.
 - **Workaround in use:** implemented as proposed in internal/module.
-- **Decision:** (lead)
+- **Decision:** (lead) accepted; contracts.md reworded.
