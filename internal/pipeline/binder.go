@@ -10,6 +10,7 @@ import (
 	"net/textproto"
 	"reflect"
 	"strings"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -101,6 +102,12 @@ type binder struct {
 	reset    [][]int // exported non-body fields zeroed after JSON decoding
 	validate *validator.Validate
 	names    []fieldName
+
+	// scratch recycles the *typ values that value inputs are bound into.
+	// The handler receives a copy (boxing a struct into an interface
+	// copies it), and the scratch value is zeroed before it is reused, so
+	// nothing the handler sees is ever shared or mutated later.
+	scratch sync.Pool
 }
 
 // compileBinder analyses t once. t is a struct type or a pointer to one.
@@ -290,7 +297,13 @@ func (b *binder) bind(gc *gin.Context) (any, error) {
 	if b.trivial {
 		return b.zero, nil
 	}
-	pv := reflect.New(b.typ)
+	var pv reflect.Value
+	if b.ptr {
+		pv = reflect.New(b.typ) // handed to the handler: never recycled
+	} else {
+		pv = b.getScratch()
+		defer b.putScratch(pv)
+	}
 	v := pv.Elem()
 	if b.hasJSON {
 		decoded, err := decodeJSON(gc.Request, pv.Interface())
@@ -360,6 +373,21 @@ func (b *binder) bind(gc *gin.Context) (any, error) {
 		return pv.Interface(), nil
 	}
 	return v.Interface(), nil
+}
+
+// getScratch returns a zero *typ value for binding a value input.
+func (b *binder) getScratch() reflect.Value {
+	if p := b.scratch.Get(); p != nil {
+		return reflect.ValueOf(p)
+	}
+	return reflect.New(b.typ)
+}
+
+// putScratch zeroes pv (dropping every reference it holds, so a slice or
+// map decoded into it is never reused by a later request) and recycles it.
+func (b *binder) putScratch(pv reflect.Value) {
+	pv.Elem().SetZero()
+	b.scratch.Put(pv.Interface())
 }
 
 func bindFile(gc *gin.Context, f *bfield, v reflect.Value) {
