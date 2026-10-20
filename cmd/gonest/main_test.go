@@ -73,10 +73,15 @@ func TestCLIDryRunAndForce(t *testing.T) {
 	}
 }
 
-// TestEndToEnd scaffolds a project, generates components and compiles it.
-// The project uses --minimal because modules/config and modules/logger are
-// built by another agent; the full template is covered by golden tests.
+// TestEndToEnd scaffolds a project (full template, with modules/config and
+// modules/logger, and --minimal), generates components and compiles it.
 func TestEndToEnd(t *testing.T) {
+	for _, variant := range []string{"full", "minimal"} {
+		t.Run(variant, func(t *testing.T) { endToEnd(t, variant == "minimal") })
+	}
+}
+
+func endToEnd(t *testing.T, minimal bool) {
 	goBin, err := exec.LookPath("go")
 	if err != nil {
 		t.Skip("go not on PATH")
@@ -84,13 +89,12 @@ func TestEndToEnd(t *testing.T) {
 	repo := repoRoot(t)
 	work := t.TempDir()
 
-	steps := [][]string{
-		{"new", "shop", "--module", "example.com/shop", "--minimal", "--gonest-replace", repo},
+	args := []string{"new", "shop", "--module", "example.com/shop", "--gonest-replace", repo}
+	if minimal {
+		args = append(args, "--minimal")
 	}
-	for _, s := range steps {
-		if out, err := runCLI(t, work, s...); err != nil {
-			t.Fatalf("%v: %v\n%s", s, err, out)
-		}
+	if out, err := runCLI(t, work, args...); err != nil {
+		t.Fatalf("%v: %v\n%s", args, err, out)
 	}
 	proj := filepath.Join(work, "shop")
 	for _, s := range [][]string{
