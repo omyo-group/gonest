@@ -9,6 +9,7 @@ import (
 	"runtime/debug"
 
 	"github.com/gin-gonic/gin"
+	ginjson "github.com/gin-gonic/gin/codec/json"
 	"github.com/omyo/gonest/internal/core"
 )
 
@@ -68,7 +69,7 @@ func (r *route) serve(gc *gin.Context) {
 	if r.raw {
 		return
 	}
-	r.write(ctx, out)
+	r.write(ctx, g, out)
 }
 
 // logger returns the request logger stored by middleware under LoggerKey,
@@ -188,8 +189,14 @@ func (r *route) runPipes(ctx *core.Ctx, pipes []core.Pipe, in any) (any, error) 
 	return in, nil
 }
 
-// write renders a successful result.
-func (r *route) write(ctx *core.Ctx, out any) {
+// jsonContentType is the Content-Type gin's JSON renderer writes.
+const jsonContentType = "application/json; charset=utf-8"
+
+// write renders a successful result. The value is encoded before anything is
+// written (with gin's JSON codec, as gin.Context.JSON does), so a value that
+// cannot be encoded (NaN, a channel, a failing MarshalJSON) goes through the
+// exception filters as a 500 instead of a silent empty 200.
+func (r *route) write(ctx *core.Ctx, g *Globals, out any) {
 	gc := ctx.Gin()
 	status := ctx.StatusOverride()
 	if status == 0 {
@@ -200,7 +207,12 @@ func (r *route) write(ctx *core.Ctx, out any) {
 		gc.Writer.WriteHeaderNow()
 		return
 	}
-	gc.JSON(status, out)
+	body, err := ginjson.API.Marshal(out)
+	if err != nil {
+		r.handleError(ctx, g, fmt.Errorf("gonest: encoding the response of %s: %w", r.info.Handler.Name, err))
+		return
+	}
+	gc.Data(status, jsonContentType, body)
 }
 
 // handleError runs the exception filters: route, controller, global, then the

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -741,5 +742,35 @@ func TestCtxLoggerFromMiddleware(t *testing.T) {
 				t.Fatalf("want record in app logger; request=%q app=%q", gotReq, gotApp)
 			}
 		})
+	}
+}
+
+type badJSON struct{}
+
+func (badJSON) MarshalJSON() ([]byte, error) { return nil, errors.New("cannot encode") }
+
+// An Out value that encoding/json rejects is a logged 500, not an empty 200.
+func TestResponseEncodingFailure(t *testing.T) {
+	h := newHarness(t, "")
+	h.mount(func(r core.Router) {
+		r.GET("/nan", core.Handle(func(*core.Ctx, core.Empty) (float64, error) { return math.NaN(), nil }))
+		r.GET("/bad", core.Handle(func(*core.Ctx, core.Empty) (badJSON, error) { return badJSON{}, nil }))
+		r.GET("/ok", core.Handle(func(c *core.Ctx, _ core.Empty) (map[string]int, error) {
+			c.SetStatus(http.StatusAccepted)
+			return map[string]int{"a": 1}, nil
+		}))
+	})
+	for _, path := range []string{"/nan", "/bad"} {
+		rec := h.do(http.MethodGet, path, "")
+		if rec.Code != http.StatusInternalServerError || decodeError(t, rec).Message != "Internal Server Error" {
+			t.Fatalf("%s: %d %s", path, rec.Code, rec.Body)
+		}
+	}
+	if logs := h.logs.String(); strings.Count(logs, "gonest: encoding the response of") != 2 {
+		t.Fatalf("encoding failures not logged: %s", logs)
+	}
+	rec := h.do(http.MethodGet, "/ok", "")
+	if rec.Code != http.StatusAccepted || rec.Body.String() != `{"a":1}` || rec.Header().Get("Content-Type") != "application/json; charset=utf-8" {
+		t.Fatalf("%d %q %v", rec.Code, rec.Body, rec.Header())
 	}
 }
