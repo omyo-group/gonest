@@ -189,8 +189,9 @@ func (r *route) runPipes(ctx *core.Ctx, pipes []core.Pipe, in any) (any, error) 
 	return in, nil
 }
 
-// jsonContentType is the Content-Type gin's JSON renderer writes.
-const jsonContentType = "application/json; charset=utf-8"
+// jsonContentType is the Content-Type gin's JSON renderer writes. Shared and
+// never modified, like gin's own, so writing it does not allocate.
+var jsonContentType = []string{"application/json; charset=utf-8"}
 
 // write renders a successful result. The value is encoded before anything is
 // written (with gin's JSON codec, as gin.Context.JSON does), so a value that
@@ -212,7 +213,25 @@ func (r *route) write(ctx *core.Ctx, g *Globals, out any) {
 		r.handleError(ctx, g, fmt.Errorf("gonest: encoding the response of %s: %w", r.info.Handler.Name, err))
 		return
 	}
-	gc.Data(status, jsonContentType, body)
+	gc.Writer.Header()["Content-Type"] = jsonContentType
+	gc.Status(status)
+	if !bodyAllowedForStatus(status) {
+		gc.Writer.WriteHeaderNow()
+		return
+	}
+	_, _ = gc.Writer.Write(body)
+}
+
+// bodyAllowedForStatus mirrors gin's rule (and net/http's): 1xx, 204 and 304
+// responses have no body.
+func bodyAllowedForStatus(status int) bool {
+	switch {
+	case status >= 100 && status <= 199:
+		return false
+	case status == http.StatusNoContent, status == http.StatusNotModified:
+		return false
+	}
+	return true
 }
 
 // handleError runs the exception filters: route, controller, global, then the

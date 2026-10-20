@@ -774,3 +774,20 @@ func TestResponseEncodingFailure(t *testing.T) {
 		t.Fatalf("%d %q %v", rec.Code, rec.Body, rec.Header())
 	}
 }
+
+func TestWriteStatusWithoutBody(t *testing.T) {
+	h := newHarness(t, "")
+	h.mount(func(r core.Router) {
+		r.GET("/nm", core.Handle(func(*core.Ctx, core.Empty) (string, error) { return "x", nil }), core.Status(http.StatusNotModified))
+		r.GET("/nc", core.Handle(func(c *core.Ctx, _ core.Empty) (string, error) {
+			c.SetStatus(http.StatusNoContent)
+			return "x", nil
+		}))
+	})
+	for _, p := range []string{"/nm", "/nc"} {
+		rec := h.do(http.MethodGet, p, "")
+		if rec.Body.Len() != 0 || (rec.Code != http.StatusNotModified && rec.Code != http.StatusNoContent) {
+			t.Fatalf("%s: %d %q", p, rec.Code, rec.Body)
+		}
+	}
+}
