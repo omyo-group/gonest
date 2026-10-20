@@ -342,3 +342,11 @@ Gin middleware is bound with `Module.Configure` (see
 SaaS tenant middleware answers 400 for a missing `X-Tenant-ID` header even
 when the token is missing too. Use `c.AbortWithStatusJSON(...)` with
 `gonest.X(...).Body()` to keep the error shape consistent.
+
+Gin attaches middleware to a route when the route is registered, so calling
+`app.Engine().Use(...)` after `gonest.New` has no effect on Gonest routes.
+For application-wide middleware use `m.Apply(...).ForAllRoutes()` in the
+root module's `Configure`, or create the engine yourself, call `Use` on it
+and pass it with `gonest.WithEngine(e)`. Only engine-level middleware (the
+second form) also runs for the 404/405 fallbacks, which matters for CORS
+preflight requests to routes without an `OPTIONS` handler.
