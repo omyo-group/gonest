@@ -59,6 +59,11 @@ request for it returns the cached bytes. The module's own routes are hidden
 from the document and follow `gonest.WithGlobalPrefix`. If a route requires
 a security scheme that is not defined, `gonest.New` fails.
 
+Global guards apply to the documentation routes too. `RouteOptions` adds
+route options to them: `gonest.SetMetadata(...)` to let a global guard with
+a "public" escape hatch (see [Pipeline](pipeline.md#global-guard-with-a-public-escape-hatch))
+through, or `gonest.UseGuards(...)` to protect the documentation.
+
 ## What ends up in the document
 
 | Source | OpenAPI |
