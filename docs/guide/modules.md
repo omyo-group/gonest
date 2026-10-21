@@ -58,6 +58,7 @@ var Module = &gonest.Module{
 		gonest.Value[Clock](time.Now),
 		gonest.Provide(NewTokenService),
 		gonest.Provide(NewUserStore),
+		gonest.Provide(NewLoginLimiter),
 		gonest.Provide(NewJWTGuard),
 		gonest.Provide(NewRolesGuard),
 	},
@@ -193,37 +194,37 @@ modules configured by `main` and by the tests:
 // logger.ForRoot, openapi.Module) are functions returning *gonest.Module, so
 // the root is built by a function too.
 func NewModule(o Options) *gonest.Module {
+	imports := []*gonest.Module{
+		// Global modules: *settings.Config and *slog.Logger are injectable everywhere.
+		config.ForRoot[settings.Config](config.Options{
+			Prefix:   settings.EnvPrefix,
+			Lookup:   o.Lookup,
+			EnvFiles: o.EnvFiles,
+		}),
+		logger.ForRoot(logger.Options{Level: o.LogLevel, Format: o.LogFormat, Output: o.LogOutput}),
+
+		platform.Module,
+		auth.Module,
+		tenants.Module,
+		projects.Module,
+	}
+	if o.Docs {
+		imports = append(imports, openapi.Module(openapi.Options{
+			Info: openapi.Info{
+				Title:       "Gonest SaaS example",
+				Version:     "1.0.0",
+				Description: "Multi-tenant projects API. Log in with POST /auth/login, then send the token and X-Tenant-ID.",
+			},
+			SecuritySchemes: map[string]openapi.SecurityScheme{"bearer": openapi.BearerJWT()},
+			// Enabled explicitly for local exploration: acknowledge that
+			// the documentation is unguarded.
+			Public: true,
+		}))
+	}
 	return &gonest.Module{
-		Name: "app",
-		Imports: []*gonest.Module{
-			// Global modules: *settings.Config and *slog.Logger are injectable everywhere.
-			config.ForRoot[settings.Config](config.Options{
-				Prefix:   settings.EnvPrefix,
-				Lookup:   o.Lookup,
-				EnvFiles: o.EnvFiles,
-			}),
-			logger.ForRoot(logger.Options{Level: o.LogLevel, Format: o.LogFormat, Output: o.LogOutput}),
-
-			platform.Module,
-			auth.Module,
-			tenants.Module,
-			projects.Module,
-
-			openapi.Module(openapi.Options{
-				Info: openapi.Info{
-					Title:       "Gonest SaaS example",
-					Version:     "1.0.0",
-					Description: "Multi-tenant projects API. Log in with POST /auth/login, then send the token and X-Tenant-ID.",
-				},
-				SecuritySchemes: map[string]openapi.SecurityScheme{"bearer": openapi.BearerJWT()},
-			}),
-		},
-		// Request logging for every route except the health probe.
-		Configure: func(m *gonest.MiddlewareConsumer, l *slog.Logger) {
-			m.Apply(logger.RequestLogger(l)).
-				Exclude(gonest.ForPath("/health")).
-				ForAllRoutes()
-		},
+		Name:      "app",
+		Imports:   imports,
+		Configure: configure,
 	}
 }
 ```
@@ -235,26 +236,35 @@ whose first parameter is `*gonest.MiddlewareConsumer`; its other parameters
 are injected from the module. It runs once, at startup, and binds ordinary
 `gin.HandlerFunc` middleware to routes:
 
-<!-- snippet: examples/saas/internal/tenants/tenants.go#tenants-module -->
+<!-- snippet: examples/saas/internal/app/app.go#root-configure -->
 ```go
-// Module provides and exports Service, and applies the tenant middleware to
-// the tenant-scoped routes of the whole application (NestJS configure()).
-// RouteSpec paths are relative to the global prefix; a trailing * matches the
-// path itself and everything below it.
-var Module = &gonest.Module{
-	Name:        "tenants",
-	Imports:     []*gonest.Module{auth.Module},
-	Providers:   []gonest.Provider{gonest.Provide(NewService)},
-	Controllers: []any{NewTenantsController},
-	Exports:     []gonest.Token{gonest.TokenOf[*Service]()},
-	Configure: func(m *gonest.MiddlewareConsumer, svc *Service) {
-		m.Apply(svc.Middleware()).ForRoutes(
-			gonest.ForPath("/projects/*"),
-			gonest.ForPath("/tenants/*"),
-		)
-	},
+// configure is the root module's Configure (NestJS configure(consumer)): its
+// parameters after the consumer are injected. Rules apply to the routes of
+// the whole application; paths are relative to the global prefix and a
+// trailing * matches the path itself and everything below it.
+func configure(m *gonest.MiddlewareConsumer, l *slog.Logger, tenantSvc *tenants.Service) {
+	// Request logging for every route except the health probe.
+	m.Apply(logger.RequestLogger(l)).
+		Exclude(gonest.ForPath("/health")).
+		ForAllRoutes()
+	// Tenant resolution is deny by default: every route requires a valid
+	// X-Tenant-ID except the tenant-independent ones listed here, so a new
+	// controller is tenant-scoped without extra wiring.
+	m.Apply(tenantSvc.Middleware()).
+		Exclude(
+			gonest.ForPath("/health"),
+			gonest.ForPath("/auth/*"),
+			gonest.ForPath(openapi.DefaultJSONPath),
+			gonest.ForPath(openapi.DefaultUIPath+"/*"),
+		).
+		ForAllRoutes()
 }
 ```
+
+The tenant rule lists the routes that are *not* tenant-scoped instead of
+the ones that are: a controller added later gets tenant resolution without
+anyone remembering to register it, the same deny-by-default idea as a global
+guard.
 
 The middleware itself is plain Gin:
 
@@ -284,8 +294,9 @@ func (s *Service) Middleware() gin.HandlerFunc {
 Rules:
 
 - `m.Apply(h...)` starts a rule; finish it with `ForRoutes(specs...)` or
-  `ForAllRoutes()`. `Exclude(specs...)` removes routes (the root module of
-  the example excludes `/health` from request logging).
+  `ForAllRoutes()`. `Exclude(specs...)` removes routes (the example
+  excludes `/health` from request logging, and tenant-independent routes
+  from tenant resolution).
 - `gonest.ForPath("/projects/*")` selects every method on a path; a trailing
   `*` matches the path itself and everything below it.
   `gonest.ForRoute("GET", "/projects")` selects one method.

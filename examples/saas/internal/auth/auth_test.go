@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -12,6 +13,7 @@ import (
 	"github.com/omyo/gonest/examples/saas/internal/auth"
 	"github.com/omyo/gonest/examples/saas/internal/settings"
 	"github.com/omyo/gonest/gonesttest"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var t0 = time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -148,7 +150,10 @@ func TestRolesOption(t *testing.T) {
 }
 
 func TestUserStore(t *testing.T) {
-	s := auth.NewUserStore()
+	s, err := auth.NewUserStore(&settings.Config{BcryptCost: bcrypt.MinCost})
+	if err != nil {
+		t.Fatal(err)
+	}
 	if _, ok := s.Authenticate("ALICE@acme.test", auth.DemoPassword); !ok {
 		t.Error("email should be case-insensitive")
 	}
@@ -157,5 +162,57 @@ func TestUserStore(t *testing.T) {
 	}
 	if _, ok := s.Authenticate("nobody@acme.test", auth.DemoPassword); ok {
 		t.Error("unknown user accepted")
+	}
+}
+
+func TestLoginLimiter(t *testing.T) {
+	now := t0
+	clock := func() time.Time { return now }
+	fail := func(l *auth.LoginLimiter, ip, email string, n int) {
+		for range n {
+			l.Fail(ip, email)
+		}
+	}
+	cases := []struct {
+		name     string
+		setup    func(l *auth.LoginLimiter)
+		ip       string
+		email    string
+		throttle bool
+	}{
+		{"fresh client", func(*auth.LoginLimiter) {}, "1.1.1.1", "a@x.test", false},
+		{"under account limit", func(l *auth.LoginLimiter) { fail(l, "1.1.1.1", "a@x.test", 4) }, "1.1.1.1", "a@x.test", false},
+		{"account limit", func(l *auth.LoginLimiter) { fail(l, "1.1.1.1", "a@x.test", 5) }, "1.1.1.1", "A@X.test", true},
+		{"other ip unaffected", func(l *auth.LoginLimiter) { fail(l, "1.1.1.1", "a@x.test", 5) }, "2.2.2.2", "a@x.test", false},
+		{"ip limit across emails", func(l *auth.LoginLimiter) {
+			for i := range 50 {
+				l.Fail("1.1.1.1", strconv.Itoa(i)+"@x.test")
+			}
+		}, "1.1.1.1", "new@x.test", true},
+		{"success resets account", func(l *auth.LoginLimiter) {
+			fail(l, "1.1.1.1", "a@x.test", 5)
+			l.Succeed("1.1.1.1", "a@x.test")
+		}, "1.1.1.1", "a@x.test", false},
+		{"window expires", func(l *auth.LoginLimiter) {
+			fail(l, "1.1.1.1", "a@x.test", 5)
+			now = now.Add(16 * time.Minute)
+		}, "1.1.1.1", "a@x.test", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			now = t0
+			l := auth.NewLoginLimiter(clock)
+			tc.setup(l)
+			wait := l.Check(tc.ip, tc.email)
+			if (wait > 0) != tc.throttle {
+				t.Fatalf("wait = %v, want throttled %v", wait, tc.throttle)
+			}
+			if tc.throttle && wait > 15*time.Minute {
+				t.Fatalf("wait = %v exceeds the window", wait)
+			}
+		})
+	}
+	if auth.NewLoginLimiter(nil).Check("ip", "e") != 0 {
+		t.Fatal("nil clock limiter should allow")
 	}
 }

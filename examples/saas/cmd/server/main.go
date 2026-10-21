@@ -1,8 +1,8 @@
 // Command server runs the Gonest SaaS example.
 //
-//	go run ./examples/saas/cmd/server
-//	SAAS_PORT=9090 SAAS_JWT_SECRET=... go run ./examples/saas/cmd/server
+//	SAAS_JWT_SECRET=$(openssl rand -hex 32) go run ./examples/saas/cmd/server -docs
 //
+// SAAS_JWT_SECRET is required (see examples/saas/.env.example). With -docs,
 // Swagger UI is served at http://localhost:8080/docs.
 package main
 
@@ -23,13 +23,14 @@ import (
 
 func main() {
 	debug := flag.Bool("debug", false, "log at debug level")
+	docs := flag.Bool("docs", false, "serve the OpenAPI document and Swagger UI")
 	flag.Parse()
-	if err := run(*debug); err != nil {
+	if err := run(*debug, *docs); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func run(debug bool) error {
+func run(debug, docs bool) error {
 	level := slog.LevelInfo
 	if debug {
 		level = slog.LevelDebug
@@ -38,7 +39,7 @@ func run(debug bool) error {
 	// route and runs OnModuleInit / OnApplicationBootstrap. Errors are
 	// returned, never panicked.
 	application, err := gonest.New(
-		app.NewModule(app.Options{LogLevel: level}),
+		app.NewModule(app.Options{LogLevel: level, Docs: docs}),
 		gonest.WithShutdownTimeout(15*time.Second),
 	)
 	if err != nil {

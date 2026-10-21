@@ -110,13 +110,14 @@ OpenAPI). Its `main`:
 ```go
 func main() {
 	debug := flag.Bool("debug", false, "log at debug level")
+	docs := flag.Bool("docs", false, "serve the OpenAPI document and Swagger UI")
 	flag.Parse()
-	if err := run(*debug); err != nil {
+	if err := run(*debug, *docs); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func run(debug bool) error {
+func run(debug, docs bool) error {
 	level := slog.LevelInfo
 	if debug {
 		level = slog.LevelDebug
@@ -125,7 +126,7 @@ func run(debug bool) error {
 	// route and runs OnModuleInit / OnApplicationBootstrap. Errors are
 	// returned, never panicked.
 	application, err := gonest.New(
-		app.NewModule(app.Options{LogLevel: level}),
+		app.NewModule(app.Options{LogLevel: level, Docs: docs}),
 		gonest.WithShutdownTimeout(15*time.Second),
 	)
 	if err != nil {
@@ -150,7 +151,8 @@ func run(debug bool) error {
 ```
 
 ```sh
-go run ./examples/saas/cmd/server            # SAAS_PORT, SAAS_JWT_SECRET, SAAS_TOKEN_TTL
+# SAAS_JWT_SECRET is required (no default); SAAS_PORT and SAAS_TOKEN_TTL are optional.
+SAAS_JWT_SECRET=$(openssl rand -hex 32) go run ./examples/saas/cmd/server -docs
 TOKEN=$(curl -s -X POST localhost:8080/auth/login \
   -d '{"email":"alice@acme.test","password":"demo-password"}' | jq -r .accessToken)
 curl -H "Authorization: Bearer $TOKEN" -H 'X-Tenant-ID: acme' localhost:8080/projects

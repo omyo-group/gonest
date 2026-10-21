@@ -120,19 +120,27 @@ gonest: cannot resolve *guide_test.AppConfig in module config: constructor faile
 type Config struct {
 	// Port is the HTTP listen port.
 	Port int `env:"PORT" default:"8080" validate:"min=1,max=65535"`
-	// JWTSecret signs access tokens (HS256). Never logged: see config.Redacted.
-	JWTSecret string `env:"JWT_SECRET" default:"dev-only-secret-change-me" secret:"true" validate:"min=16"`
+	// JWTSecret signs access tokens (HS256). It has no default: a secret
+	// shipped in source code lets anyone forge tokens. Generate one with
+	// `openssl rand -hex 32`. Never logged: see config.Redacted.
+	JWTSecret string `env:"JWT_SECRET" secret:"true" validate:"required,min=32"`
+	// BcryptCost is the work factor of password hashes (bcrypt.DefaultCost
+	// is 10). Tests lower it to bcrypt.MinCost, 4, to run fast.
+	BcryptCost int `env:"BCRYPT_COST" default:"10" validate:"min=4,max=31"`
 	// TokenTTL is the lifetime of issued access tokens.
 	TokenTTL time.Duration `env:"TOKEN_TTL" default:"1h" validate:"gt=0"`
 }
 ```
 
 The root module loads it with `Prefix: "SAAS_"`, so the variables are
-`SAAS_PORT`, `SAAS_JWT_SECRET` and `SAAS_TOKEN_TTL`. `main` reads the port
-with `gonest.Get[*settings.Config](app)` and logs `config.Redacted(cfg)`:
+`SAAS_PORT`, `SAAS_JWT_SECRET`, `SAAS_BCRYPT_COST` and `SAAS_TOKEN_TTL`.
+`SAAS_JWT_SECRET` has no default on purpose: a secret committed to source
+code lets anyone forge tokens, so the application refuses to start until one
+is set (`examples/saas/.env.example` lists every variable). `main` reads the
+port with `gonest.Get[*settings.Config](app)` and logs `config.Redacted(cfg)`:
 
 ```text
-level=INFO msg=configuration config="Config{Port:8080, JWTSecret:******, TokenTTL:1h0m0s}"
+level=INFO msg=configuration config="Config{Port:8080, JWTSecret:******, BcryptCost:10, TokenTTL:1h0m0s}"
 ```
 
 Tests pass `Lookup` and an empty `EnvFiles` so they never read the real

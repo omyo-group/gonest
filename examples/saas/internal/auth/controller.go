@@ -2,6 +2,7 @@ package auth
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/omyo/gonest"
 )
@@ -21,14 +22,15 @@ type TokenResponse struct {
 
 // AuthController exposes login and the current user.
 type AuthController struct {
-	users  *UserStore
-	tokens *TokenService
-	jwt    *JWTGuard
+	users   *UserStore
+	tokens  *TokenService
+	jwt     *JWTGuard
+	limiter *LoginLimiter
 }
 
 // NewAuthController is the controller constructor; its parameters are injected.
-func NewAuthController(users *UserStore, tokens *TokenService, jwt *JWTGuard) *AuthController {
-	return &AuthController{users: users, tokens: tokens, jwt: jwt}
+func NewAuthController(users *UserStore, tokens *TokenService, jwt *JWTGuard, limiter *LoginLimiter) *AuthController {
+	return &AuthController{users: users, tokens: tokens, jwt: jwt, limiter: limiter}
 }
 
 // Routes implements gonest.Controller.
@@ -38,19 +40,28 @@ func (c *AuthController) Routes(r gonest.Router) {
 	r.POST("/login", gonest.Handle(c.Login),
 		gonest.Status(http.StatusOK),
 		gonest.Summary("Exchange credentials for an access token"),
-		gonest.Responds(http.StatusUnauthorized, "Invalid credentials", gonest.ErrorBody{}))
+		gonest.Responds(http.StatusUnauthorized, "Invalid credentials", gonest.ErrorBody{}),
+		gonest.Responds(http.StatusTooManyRequests, "Too many failed attempts; see Retry-After", gonest.ErrorBody{}))
 	r.GET("/me", gonest.Handle(c.Me),
 		gonest.UseGuards(c.jwt),
 		gonest.Security("bearer"),
 		gonest.Summary("The authenticated user"))
 }
 
-// Login checks credentials and issues a token.
-func (c *AuthController) Login(_ *gonest.Ctx, in LoginInput) (TokenResponse, error) {
+// Login checks credentials and issues a token. Repeated failures from one
+// client are refused with 429 for a while (see LoginLimiter).
+func (c *AuthController) Login(ctx *gonest.Ctx, in LoginInput) (TokenResponse, error) {
+	ip := ctx.Gin().ClientIP()
+	if wait := c.limiter.Check(ip, in.Email); wait > 0 {
+		ctx.Writer().Header().Set("Retry-After", strconv.Itoa(int(wait.Seconds())+1))
+		return TokenResponse{}, gonest.TooManyRequests("too many failed login attempts")
+	}
 	u, ok := c.users.Authenticate(in.Email, in.Password)
 	if !ok {
+		c.limiter.Fail(ip, in.Email)
 		return TokenResponse{}, gonest.Unauthorized("invalid credentials")
 	}
+	c.limiter.Succeed(ip, in.Email)
 	tok, err := c.tokens.Issue(u)
 	if err != nil {
 		return TokenResponse{}, err

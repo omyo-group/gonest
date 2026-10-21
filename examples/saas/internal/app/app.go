@@ -28,6 +28,9 @@ type Options struct {
 	Lookup func(string) (string, bool)
 	// EnvFiles are .env files to load (default ".env", optional).
 	EnvFiles []string
+	// Docs serves the OpenAPI document and Swagger UI. They map every route
+	// of the API, so the server only enables them on request (-docs).
+	Docs bool
 }
 
 // docs:root-module
@@ -36,38 +39,64 @@ type Options struct {
 // logger.ForRoot, openapi.Module) are functions returning *gonest.Module, so
 // the root is built by a function too.
 func NewModule(o Options) *gonest.Module {
-	return &gonest.Module{
-		Name: "app",
-		Imports: []*gonest.Module{
-			// Global modules: *settings.Config and *slog.Logger are injectable everywhere.
-			config.ForRoot[settings.Config](config.Options{
-				Prefix:   settings.EnvPrefix,
-				Lookup:   o.Lookup,
-				EnvFiles: o.EnvFiles,
-			}),
-			logger.ForRoot(logger.Options{Level: o.LogLevel, Format: o.LogFormat, Output: o.LogOutput}),
+	imports := []*gonest.Module{
+		// Global modules: *settings.Config and *slog.Logger are injectable everywhere.
+		config.ForRoot[settings.Config](config.Options{
+			Prefix:   settings.EnvPrefix,
+			Lookup:   o.Lookup,
+			EnvFiles: o.EnvFiles,
+		}),
+		logger.ForRoot(logger.Options{Level: o.LogLevel, Format: o.LogFormat, Output: o.LogOutput}),
 
-			platform.Module,
-			auth.Module,
-			tenants.Module,
-			projects.Module,
-
-			openapi.Module(openapi.Options{
-				Info: openapi.Info{
-					Title:       "Gonest SaaS example",
-					Version:     "1.0.0",
-					Description: "Multi-tenant projects API. Log in with POST /auth/login, then send the token and X-Tenant-ID.",
-				},
-				SecuritySchemes: map[string]openapi.SecurityScheme{"bearer": openapi.BearerJWT()},
-			}),
-		},
-		// Request logging for every route except the health probe.
-		Configure: func(m *gonest.MiddlewareConsumer, l *slog.Logger) {
-			m.Apply(logger.RequestLogger(l)).
-				Exclude(gonest.ForPath("/health")).
-				ForAllRoutes()
-		},
+		platform.Module,
+		auth.Module,
+		tenants.Module,
+		projects.Module,
 	}
+	if o.Docs {
+		imports = append(imports, openapi.Module(openapi.Options{
+			Info: openapi.Info{
+				Title:       "Gonest SaaS example",
+				Version:     "1.0.0",
+				Description: "Multi-tenant projects API. Log in with POST /auth/login, then send the token and X-Tenant-ID.",
+			},
+			SecuritySchemes: map[string]openapi.SecurityScheme{"bearer": openapi.BearerJWT()},
+			// Enabled explicitly for local exploration: acknowledge that
+			// the documentation is unguarded.
+			Public: true,
+		}))
+	}
+	return &gonest.Module{
+		Name:      "app",
+		Imports:   imports,
+		Configure: configure,
+	}
+}
+
+// docs:end
+
+// docs:root-configure
+
+// configure is the root module's Configure (NestJS configure(consumer)): its
+// parameters after the consumer are injected. Rules apply to the routes of
+// the whole application; paths are relative to the global prefix and a
+// trailing * matches the path itself and everything below it.
+func configure(m *gonest.MiddlewareConsumer, l *slog.Logger, tenantSvc *tenants.Service) {
+	// Request logging for every route except the health probe.
+	m.Apply(logger.RequestLogger(l)).
+		Exclude(gonest.ForPath("/health")).
+		ForAllRoutes()
+	// Tenant resolution is deny by default: every route requires a valid
+	// X-Tenant-ID except the tenant-independent ones listed here, so a new
+	// controller is tenant-scoped without extra wiring.
+	m.Apply(tenantSvc.Middleware()).
+		Exclude(
+			gonest.ForPath("/health"),
+			gonest.ForPath("/auth/*"),
+			gonest.ForPath(openapi.DefaultJSONPath),
+			gonest.ForPath(openapi.DefaultUIPath+"/*"),
+		).
+		ForAllRoutes()
 }
 
 // docs:end
