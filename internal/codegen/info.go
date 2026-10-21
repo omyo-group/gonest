@@ -20,7 +20,7 @@ type InfoReport struct {
 	ProjectModule string
 }
 
-var requireRe = regexp.MustCompile(`(?m)^\s*(?:require\s+)?(github\.com/(?:omyo/gonest|gin-gonic/gin))\s+(v\S+)`)
+var requireRe = regexp.MustCompile(`(?m)^\s*(?:require\s+)?(github\.com/(?:omyo-group/gonest|gin-gonic/gin))\s+(v\S+)`)
 var moduleRe = regexp.MustCompile(`(?m)^module\s+(\S+)`)
 
 // Info gathers version information. dir is searched for a go.mod.
