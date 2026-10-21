@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/omyo/gonest/internal/core"
-	"github.com/omyo/gonest/internal/di"
-	"github.com/omyo/gonest/internal/pipeline"
+	"github.com/omyo-group/gonest/internal/core"
+	"github.com/omyo-group/gonest/internal/di"
+	"github.com/omyo-group/gonest/internal/pipeline"
 )
 
 // Options configures Bootstrap. It mirrors the root package's AppConfig.

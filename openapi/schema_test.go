@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/omyo/gonest"
-	"github.com/omyo/gonest/openapi"
+	"github.com/omyo-group/gonest"
+	"github.com/omyo-group/gonest/openapi"
 )
 
 type rules struct {

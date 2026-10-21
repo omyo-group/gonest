@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/omyo/gonest"
-	"github.com/omyo/gonest/examples/saas/internal/settings"
+	"github.com/omyo-group/gonest"
+	"github.com/omyo-group/gonest/examples/saas/internal/settings"
 )
 
 // Claims is the payload of an access token.

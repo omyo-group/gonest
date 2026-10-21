@@ -15,7 +15,7 @@ error logs (unhandled errors, 5xx `HTTPError`s, recovered panics).
 
 ## modules/logger
 
-`github.com/omyo/gonest/modules/logger` provides:
+`github.com/omyo-group/gonest/modules/logger` provides:
 
 - `logger.New(opts)`: a `*slog.Logger` writing text or JSON (`Format`; the
   default is JSON when `GIN_MODE=release`, text otherwise), with `Level`,

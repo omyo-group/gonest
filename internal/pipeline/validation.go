@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/omyo/gonest/internal/core"
+	"github.com/omyo-group/gonest/internal/core"
 )
 
 // newValidator returns the default validator. Field names in its errors are

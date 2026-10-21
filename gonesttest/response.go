@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/omyo/gonest"
+	"github.com/omyo-group/gonest"
 )
 
 // Response is a recorded HTTP response with assertion helpers. Expect methods

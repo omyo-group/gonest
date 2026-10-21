@@ -28,8 +28,8 @@ once at startup, and serving a request is a precomputed Gin handler chain.
 ## Install
 
 ```sh
-go get github.com/omyo/gonest            # Go 1.24+
-go install github.com/omyo/gonest/cmd/gonest@latest   # optional CLI
+go get github.com/omyo-group/gonest            # Go 1.24+
+go install github.com/omyo-group/gonest/cmd/gonest@latest   # optional CLI
 ```
 
 ## Quick start
@@ -39,7 +39,7 @@ go install github.com/omyo/gonest/cmd/gonest@latest   # optional CLI
 import (
 	"log"
 
-	"github.com/omyo/gonest"
+	"github.com/omyo-group/gonest"
 )
 
 type Greeter struct{}

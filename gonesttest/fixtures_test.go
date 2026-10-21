@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"github.com/omyo/gonest"
+	"github.com/omyo-group/gonest"
 )
 
 // A small three-module application: auth (global guard), items (controller,

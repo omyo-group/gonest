@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/omyo/gonest/internal/core"
+	"github.com/omyo-group/gonest/internal/core"
 )
 
 // Reasons used in *core.ResolveError.

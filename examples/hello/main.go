@@ -6,7 +6,7 @@ package main
 import (
 	"log"
 
-	"github.com/omyo/gonest"
+	"github.com/omyo-group/gonest"
 )
 
 type Greeter struct{}

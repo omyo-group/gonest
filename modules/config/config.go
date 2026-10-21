@@ -10,7 +10,7 @@ import (
 	"unicode"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/omyo/gonest"
+	"github.com/omyo-group/gonest"
 )
 
 // Options configures Load, ForRoot and ForFeature.

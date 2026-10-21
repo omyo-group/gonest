@@ -191,7 +191,7 @@ func TestNewProject(t *testing.T) {
 			t.Errorf("file outside target: %s", f.Path)
 		}
 	}
-	if !strings.Contains(mod, "module demo\n") || !strings.Contains(mod, "replace github.com/omyo/gonest => "+filepath.Join(root, "rel", "gonest")) {
+	if !strings.Contains(mod, "module demo\n") || !strings.Contains(mod, "replace github.com/omyo-group/gonest => "+filepath.Join(root, "rel", "gonest")) {
 		t.Errorf("go.mod:\n%s", mod)
 	}
 	if !strings.Contains(main, "gonest.Get[*app.AppConfig]") {
@@ -216,7 +216,7 @@ func TestInfo(t *testing.T) {
 	if r.GonestVersion != Version || !strings.HasPrefix(r.GoVersion, "go") || r.ProjectModule != "" {
 		t.Fatalf("%+v", r)
 	}
-	_ = os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module example.com/x\n\ngo 1.24.0\n\nrequire github.com/omyo/gonest v0.1.0\n\nrequire (\n\tgithub.com/gin-gonic/gin v1.11.0 // indirect\n)\n"), 0o644)
+	_ = os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module example.com/x\n\ngo 1.24.0\n\nrequire github.com/omyo-group/gonest v0.1.0\n\nrequire (\n\tgithub.com/gin-gonic/gin v1.11.0 // indirect\n)\n"), 0o644)
 	r = Info(dir)
 	s := r.String()
 	for _, want := range []string{"example.com/x", "gonest v0.1.0", "gin    v1.11.0", "Go:"} {

@@ -10,7 +10,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/omyo/gonest"
+	"github.com/omyo-group/gonest"
 )
 
 // Option customises Generate.

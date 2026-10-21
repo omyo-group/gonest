@@ -42,7 +42,7 @@ func Info(dir string) InfoReport {
 	}
 	for _, m := range requireRe.FindAllSubmatch(data, -1) {
 		switch string(m[1]) {
-		case "github.com/omyo/gonest":
+		case "github.com/omyo-group/gonest":
 			r.ProjectGonest = string(m[2])
 		case "github.com/gin-gonic/gin":
 			r.ProjectGin = string(m[2])

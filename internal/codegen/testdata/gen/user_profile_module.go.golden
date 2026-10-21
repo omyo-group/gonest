@@ -1,7 +1,7 @@
 // Package user_profile contains the user-profile feature module.
 package user_profile
 
-import "github.com/omyo/gonest"
+import "github.com/omyo-group/gonest"
 
 // UserProfileModule groups the providers and controllers of the user-profile feature.
 var UserProfileModule = &gonest.Module{

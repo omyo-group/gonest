@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/omyo/gonest/internal/core"
+	"github.com/omyo-group/gonest/internal/core"
 )
 
 // HookTimeout bounds each lifecycle hook call.

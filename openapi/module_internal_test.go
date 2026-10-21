@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/omyo/gonest"
+	"github.com/omyo-group/gonest"
 )
 
 func TestRelativePath(t *testing.T) {

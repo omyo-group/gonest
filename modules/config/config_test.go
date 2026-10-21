@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/omyo/gonest"
+	"github.com/omyo-group/gonest"
 )
 
 type level int

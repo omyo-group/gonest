@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/omyo/gonest/internal/core"
+	"github.com/omyo-group/gonest/internal/core"
 )
 
 var errorType = reflect.TypeFor[error]()

@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/omyo/gonest/internal/core"
+	"github.com/omyo-group/gonest/internal/core"
 )
 
 // entry is one registered provider together with its singleton state.

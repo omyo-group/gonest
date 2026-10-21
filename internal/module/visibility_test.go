@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/omyo/gonest/internal/core"
+	"github.com/omyo-group/gonest/internal/core"
 )
 
 type (

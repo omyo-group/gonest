@@ -5,8 +5,8 @@ import (
 	"sort"
 
 	"github.com/gin-gonic/gin"
-	"github.com/omyo/gonest"
-	"github.com/omyo/gonest/examples/saas/internal/auth"
+	"github.com/omyo-group/gonest"
+	"github.com/omyo-group/gonest/examples/saas/internal/auth"
 )
 
 // HeaderName is the request header that selects the tenant.

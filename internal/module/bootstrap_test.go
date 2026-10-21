@@ -13,8 +13,8 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/omyo/gonest/internal/core"
-	"github.com/omyo/gonest/internal/pipeline"
+	"github.com/omyo-group/gonest/internal/core"
+	"github.com/omyo-group/gonest/internal/pipeline"
 )
 
 // trace records hook calls.

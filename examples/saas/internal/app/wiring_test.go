@@ -10,14 +10,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/omyo/gonest"
-	"github.com/omyo/gonest/examples/saas/internal/app"
-	"github.com/omyo/gonest/examples/saas/internal/auth"
-	"github.com/omyo/gonest/examples/saas/internal/platform"
-	"github.com/omyo/gonest/examples/saas/internal/projects"
-	"github.com/omyo/gonest/examples/saas/internal/settings"
-	"github.com/omyo/gonest/gonesttest"
-	"github.com/omyo/gonest/modules/config"
+	"github.com/omyo-group/gonest"
+	"github.com/omyo-group/gonest/examples/saas/internal/app"
+	"github.com/omyo-group/gonest/examples/saas/internal/auth"
+	"github.com/omyo-group/gonest/examples/saas/internal/platform"
+	"github.com/omyo-group/gonest/examples/saas/internal/projects"
+	"github.com/omyo-group/gonest/examples/saas/internal/settings"
+	"github.com/omyo-group/gonest/gonesttest"
+	"github.com/omyo-group/gonest/modules/config"
 )
 
 func TestResponseHeaders(t *testing.T) {

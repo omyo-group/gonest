@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/omyo/gonest"
-	"github.com/omyo/gonest/internal/pipeline"
+	"github.com/omyo-group/gonest"
+	"github.com/omyo-group/gonest/internal/pipeline"
 )
 
 // ContextKey must stay equal to the key the pipeline reads, otherwise the

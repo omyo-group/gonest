@@ -4,8 +4,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/omyo/gonest"
-	"github.com/omyo/gonest/modules/logger"
+	"github.com/omyo-group/gonest"
+	"github.com/omyo-group/gonest/modules/logger"
 )
 
 // docs:timing-interceptor

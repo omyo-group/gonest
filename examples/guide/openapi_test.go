@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/omyo/gonest"
-	"github.com/omyo/gonest/openapi"
+	"github.com/omyo-group/gonest"
+	"github.com/omyo-group/gonest/openapi"
 )
 
 func Example_openapiGenerate() {

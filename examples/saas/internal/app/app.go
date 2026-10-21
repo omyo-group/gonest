@@ -4,15 +4,15 @@ import (
 	"io"
 	"log/slog"
 
-	"github.com/omyo/gonest"
-	"github.com/omyo/gonest/examples/saas/internal/auth"
-	"github.com/omyo/gonest/examples/saas/internal/platform"
-	"github.com/omyo/gonest/examples/saas/internal/projects"
-	"github.com/omyo/gonest/examples/saas/internal/settings"
-	"github.com/omyo/gonest/examples/saas/internal/tenants"
-	"github.com/omyo/gonest/modules/config"
-	"github.com/omyo/gonest/modules/logger"
-	"github.com/omyo/gonest/openapi"
+	"github.com/omyo-group/gonest"
+	"github.com/omyo-group/gonest/examples/saas/internal/auth"
+	"github.com/omyo-group/gonest/examples/saas/internal/platform"
+	"github.com/omyo-group/gonest/examples/saas/internal/projects"
+	"github.com/omyo-group/gonest/examples/saas/internal/settings"
+	"github.com/omyo-group/gonest/examples/saas/internal/tenants"
+	"github.com/omyo-group/gonest/modules/config"
+	"github.com/omyo-group/gonest/modules/logger"
+	"github.com/omyo-group/gonest/openapi"
 )
 
 // Options are the process-level inputs of the root module: where logs go and

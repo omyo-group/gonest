@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/omyo/gonest"
+	"github.com/omyo-group/gonest"
 )
 
 // docs:dynamic-module

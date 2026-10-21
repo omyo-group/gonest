@@ -7,7 +7,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/omyo/gonest"
+	"github.com/omyo-group/gonest"
 )
 
 // This file is the "users module" from docs/contracts.md. It must keep

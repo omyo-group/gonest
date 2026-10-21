@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/omyo/gonest"
+	"github.com/omyo-group/gonest"
 )
 
 type iface interface{ M() }

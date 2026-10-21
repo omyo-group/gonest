@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/omyo/gonest"
-	"github.com/omyo/gonest/gonesttest"
+	"github.com/omyo-group/gonest"
+	"github.com/omyo-group/gonest/gonesttest"
 )
 
 // exampleT is a minimal testing.TB for Examples, which have no *testing.T.

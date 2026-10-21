@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/omyo/gonest/internal/core"
+	"github.com/omyo-group/gonest/internal/core"
 )
 
 // Graph is the validated module graph reachable from a root module.

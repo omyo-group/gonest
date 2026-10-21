@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/omyo/gonest"
+	"github.com/omyo-group/gonest"
 )
 
 // quiet silences the startup log and the framework logger in examples.

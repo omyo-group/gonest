@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/omyo/gonest"
+	"github.com/omyo-group/gonest"
 )
 
 // Item is the response of every benchmarked endpoint.

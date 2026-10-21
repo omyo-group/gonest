@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/omyo/gonest"
-	"github.com/omyo/gonest/gonesttest"
+	"github.com/omyo-group/gonest"
+	"github.com/omyo-group/gonest/gonesttest"
 )
 
 func TestFakeRepoAndRealGuard(t *testing.T) {

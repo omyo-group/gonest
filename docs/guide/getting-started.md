@@ -5,7 +5,7 @@
 Gonest needs Go 1.24 or later.
 
 ```sh
-go get github.com/omyo/gonest
+go get github.com/omyo-group/gonest
 ```
 
 Gonest depends only on Gin, go-playground/validator (and cobra, for the CLI).
@@ -17,7 +17,7 @@ Gonest depends only on Gin, go-playground/validator (and cobra, for the CLI).
 import (
 	"log"
 
-	"github.com/omyo/gonest"
+	"github.com/omyo-group/gonest"
 )
 
 type Greeter struct{}
@@ -167,7 +167,7 @@ Demo accounts (password `demo-password`): `alice@acme.test` (admin, tenant
 ## Starting a new project with the CLI
 
 ```sh
-go install github.com/omyo/gonest/cmd/gonest@latest
+go install github.com/omyo-group/gonest/cmd/gonest@latest
 gonest new shop --module example.com/shop
 cd shop && go mod tidy && go run .
 gonest g module orders && gonest g service orders && gonest g controller orders

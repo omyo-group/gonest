@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/omyo/gonest"
+	"github.com/omyo-group/gonest"
 )
 
 // Sample controllers and DTOs used by the golden test. Routes are built by

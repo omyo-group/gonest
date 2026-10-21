@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/omyo/gonest/examples/saas/internal/app"
-	"github.com/omyo/gonest/examples/saas/internal/auth"
-	"github.com/omyo/gonest/examples/saas/internal/projects"
-	"github.com/omyo/gonest/gonesttest"
+	"github.com/omyo-group/gonest/examples/saas/internal/app"
+	"github.com/omyo-group/gonest/examples/saas/internal/auth"
+	"github.com/omyo-group/gonest/examples/saas/internal/projects"
+	"github.com/omyo-group/gonest/gonesttest"
 )
 
 // testSecret is the JWT secret of the fake environment.

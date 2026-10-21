@@ -10,7 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	ginjson "github.com/gin-gonic/gin/codec/json"
-	"github.com/omyo/gonest/internal/core"
+	"github.com/omyo-group/gonest/internal/core"
 )
 
 // route is a compiled route: everything the request path needs, precomputed.

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/omyo/gonest"
+	"github.com/omyo-group/gonest"
 )
 
 // docs:input-tags

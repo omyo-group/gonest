@@ -3,7 +3,7 @@ package gonesttest
 import (
 	"fmt"
 
-	"github.com/omyo/gonest"
+	"github.com/omyo-group/gonest"
 )
 
 // shadow copies the module graph reachable from root, replacing modules and

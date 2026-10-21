@@ -2,8 +2,8 @@ module {{.Module}}
 
 go 1.24.0
 
-require github.com/omyo/gonest v{{.GonestVersion}}
+require github.com/omyo-group/gonest v{{.GonestVersion}}
 {{- if .GonestReplace}}
 
-replace github.com/omyo/gonest => {{.GonestReplace}}
+replace github.com/omyo-group/gonest => {{.GonestReplace}}
 {{- end}}

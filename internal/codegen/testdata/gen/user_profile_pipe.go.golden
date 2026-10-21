@@ -1,6 +1,6 @@
 package user_profile
 
-import "github.com/omyo/gonest"
+import "github.com/omyo-group/gonest"
 
 // UserProfilePipe transforms or validates the bound handler input. v holds a value
 // of type meta.Type; return a value of the same type.

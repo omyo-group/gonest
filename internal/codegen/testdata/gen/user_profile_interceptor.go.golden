@@ -1,6 +1,6 @@
 package user_profile
 
-import "github.com/omyo/gonest"
+import "github.com/omyo-group/gonest"
 
 // UserProfileInterceptor wraps handler execution. Code before next() runs before the
 // handler, code after it can inspect or replace the result.

@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/omyo/gonest"
-	"github.com/omyo/gonest/internal/core"
+	"github.com/omyo-group/gonest"
+	"github.com/omyo-group/gonest/internal/core"
 )
 
 func parseLines(t *testing.T, buf *bytes.Buffer) []map[string]any {

@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/omyo/gonest"
-	"github.com/omyo/gonest/internal/core"
+	"github.com/omyo-group/gonest"
+	"github.com/omyo-group/gonest/internal/core"
 )
 
 // fakeT records helper failures. Fatalf stops the helper by panicking with

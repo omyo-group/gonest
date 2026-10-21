@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/omyo/gonest"
-	"github.com/omyo/gonest/openapi"
+	"github.com/omyo-group/gonest"
+	"github.com/omyo-group/gonest/openapi"
 )
 
 var update = flag.Bool("update", false, "rewrite golden files")

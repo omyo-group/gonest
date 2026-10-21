@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/omyo/gonest"
+	"github.com/omyo-group/gonest"
 )
 
 // Builder assembles a testing application. Create it with New.

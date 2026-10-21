@@ -16,7 +16,7 @@ type ProjectOptions struct {
 	Dir string
 	// Root is the working directory that relative paths resolve against.
 	Root string
-	// GonestReplace, when set, adds `replace github.com/omyo/gonest => PATH`
+	// GonestReplace, when set, adds `replace github.com/omyo-group/gonest => PATH`
 	// to go.mod, for local development of the framework.
 	GonestReplace string
 	// Minimal omits the config and logger module wiring, so the project only

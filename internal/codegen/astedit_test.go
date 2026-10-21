@@ -9,7 +9,7 @@ import (
 )
 
 func TestRegisterInModule(t *testing.T) {
-	const head = "package users\n\nimport \"github.com/omyo/gonest\"\n\n"
+	const head = "package users\n\nimport \"github.com/omyo-group/gonest\"\n\n"
 	tests := []struct {
 		name, body, field, expr string
 		contains                []string

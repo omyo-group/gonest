@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/omyo/gonest"
+	"github.com/omyo-group/gonest"
 )
 
 const (

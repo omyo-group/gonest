@@ -1,6 +1,6 @@
 # Testing
 
-`github.com/omyo/gonest/gonesttest` is the equivalent of NestJS
+`github.com/omyo-group/gonest/gonesttest` is the equivalent of NestJS
 `Test.createTestingModule`. It uses only the standard library `testing` and
 `net/http/httptest` packages.
 

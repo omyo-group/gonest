@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	"github.com/omyo/gonest/gonesttest"
+	"github.com/omyo-group/gonest/gonesttest"
 )
 
 func TestGreet(t *testing.T) {

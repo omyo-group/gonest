@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/omyo/gonest/internal/core"
+	"github.com/omyo-group/gonest/internal/core"
 )
 
 // routeSpec is a route as declared by a controller, before compilation.

@@ -1,6 +1,6 @@
 # OpenAPI
 
-`github.com/omyo/gonest/openapi` generates an OpenAPI 3.1 document from the
+`github.com/omyo-group/gonest/openapi` generates an OpenAPI 3.1 document from the
 mounted routes and serves it with an embedded Swagger UI (no CDN, works
 offline). There are no annotations to write: request and response schemas
 come from the handler's `In` and `Out` types, and the rest from route

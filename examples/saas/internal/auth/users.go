@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/omyo/gonest/examples/saas/internal/settings"
+	"github.com/omyo-group/gonest/examples/saas/internal/settings"
 	"golang.org/x/crypto/bcrypt"
 )
 

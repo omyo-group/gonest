@@ -18,7 +18,7 @@ other packages. Stay strictly inside the paths you own.
    no global mutable state; no panics for control flow.
 
 ## Technical constraints
-- Go 1.24 (go.mod says `go 1.24.0`). Module path: github.com/omyo/gonest.
+- Go 1.24 (go.mod says `go 1.24.0`). Module path: github.com/omyo-group/gonest.
   Root package name: gonest.
 - Dependencies are frozen in go.mod: gin v1.11.0, validator/v10 v10.30.0,
   cobra v1.10.2 (CLI only). Tests use the standard library only (no testify).

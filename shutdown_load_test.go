@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/omyo/gonest"
+	"github.com/omyo-group/gonest"
 )
 
 // loadCtrl counts requests in flight and records whether any handler was

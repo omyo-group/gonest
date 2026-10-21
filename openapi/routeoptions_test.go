@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/omyo/gonest"
-	"github.com/omyo/gonest/openapi"
+	"github.com/omyo-group/gonest"
+	"github.com/omyo-group/gonest/openapi"
 )
 
 // A global guard that admits only routes marked public must be able to let

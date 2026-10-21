@@ -1,6 +1,6 @@
 package user_profile
 
-import "github.com/omyo/gonest"
+import "github.com/omyo-group/gonest"
 
 // UserProfileController exposes the user-profile routes.
 type UserProfileController struct {

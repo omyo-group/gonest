@@ -3,7 +3,7 @@ package auth
 import (
 	"time"
 
-	"github.com/omyo/gonest"
+	"github.com/omyo-group/gonest"
 )
 
 // docs:auth-module

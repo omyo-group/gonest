@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/omyo/gonest"
+	"github.com/omyo-group/gonest"
 
 	"github.com/acme/my-app/internal/app"
 )

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/omyo/gonest"
+	"github.com/omyo-group/gonest"
 )
 
 // docs:domain-filter

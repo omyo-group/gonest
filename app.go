@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/omyo/gonest/internal/module"
-	"github.com/omyo/gonest/internal/pipeline"
+	"github.com/omyo-group/gonest/internal/module"
+	"github.com/omyo-group/gonest/internal/pipeline"
 )
 
 // App is a bootstrapped Gonest application.

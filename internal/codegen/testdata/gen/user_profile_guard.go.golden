@@ -1,6 +1,6 @@
 package user_profile
 
-import "github.com/omyo/gonest"
+import "github.com/omyo-group/gonest"
 
 // UserProfileGuard authorises requests. Attach it with gonest.UseGuards(&UserProfileGuard{}).
 type UserProfileGuard struct{}

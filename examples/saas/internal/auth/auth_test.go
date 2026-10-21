@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/omyo/gonest"
-	"github.com/omyo/gonest/examples/saas/internal/auth"
-	"github.com/omyo/gonest/examples/saas/internal/settings"
-	"github.com/omyo/gonest/gonesttest"
+	"github.com/omyo-group/gonest"
+	"github.com/omyo-group/gonest/examples/saas/internal/auth"
+	"github.com/omyo-group/gonest/examples/saas/internal/settings"
+	"github.com/omyo-group/gonest/gonesttest"
 	"golang.org/x/crypto/bcrypt"
 )
 

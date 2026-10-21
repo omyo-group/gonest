@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/omyo/gonest"
-	"github.com/omyo/gonest/examples/saas/internal/auth"
-	"github.com/omyo/gonest/examples/saas/internal/tenants"
+	"github.com/omyo-group/gonest"
+	"github.com/omyo-group/gonest/examples/saas/internal/auth"
+	"github.com/omyo-group/gonest/examples/saas/internal/tenants"
 )
 
 // docs:controller-deps

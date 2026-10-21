@@ -2,7 +2,7 @@
 package app
 
 import (
-	"github.com/omyo/gonest"
+	"github.com/omyo-group/gonest"
 )
 
 // AppModule is the root module. Import feature modules here

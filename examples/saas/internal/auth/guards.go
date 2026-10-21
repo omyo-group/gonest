@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/omyo/gonest"
+	"github.com/omyo-group/gonest"
 )
 
 // UserKey is the request value key under which JWTGuard stores the *User.

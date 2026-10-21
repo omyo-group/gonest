@@ -6,9 +6,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/omyo/gonest"
-	"github.com/omyo/gonest/examples/saas/internal/projects"
-	"github.com/omyo/gonest/gonesttest"
+	"github.com/omyo-group/gonest"
+	"github.com/omyo-group/gonest/examples/saas/internal/projects"
+	"github.com/omyo-group/gonest/gonesttest"
 )
 
 // docs:testing-filter

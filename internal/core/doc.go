@@ -1,5 +1,5 @@
 // Package core holds the frozen contracts of Gonest: the types and interfaces
-// every other package builds on. The public root package (github.com/omyo/gonest)
+// every other package builds on. The public root package (github.com/omyo-group/gonest)
 // re-exports them as aliases, so users never import core directly.
 //
 // Core sits at the bottom of the import graph: it imports only the standard

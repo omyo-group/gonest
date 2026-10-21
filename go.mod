@@ -1,4 +1,4 @@
-module github.com/omyo/gonest
+module github.com/omyo-group/gonest
 
 go 1.24.0
 

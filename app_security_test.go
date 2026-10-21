@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/omyo/gonest"
+	"github.com/omyo-group/gonest"
 )
 
 type formIn struct {

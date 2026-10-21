@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/omyo/gonest/internal/codegen"
+	"github.com/omyo-group/gonest/internal/codegen"
 )
 
 // run executes the CLI with args, writing to stdout and stderr, resolving
@@ -50,7 +50,7 @@ func newNewCmd(out io.Writer, workdir string) *cobra.Command {
 	f := cmd.Flags()
 	f.StringVar(&o.Module, "module", "", "Go module path (default: the project name)")
 	f.StringVar(&o.Dir, "dir", "", "target directory (default: ./<name>)")
-	f.StringVar(&o.GonestReplace, "gonest-replace", "", "add a replace directive pointing github.com/omyo/gonest at this local path")
+	f.StringVar(&o.GonestReplace, "gonest-replace", "", "add a replace directive pointing github.com/omyo-group/gonest at this local path")
 	f.BoolVar(&o.Minimal, "minimal", false, "skip config and logger module wiring (only the root gonest package is required)")
 	f.BoolVar(&force, "force", false, "overwrite existing files")
 	f.BoolVar(&dry, "dry-run", false, "print what would be created without writing")

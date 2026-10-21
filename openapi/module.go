@@ -11,7 +11,7 @@ import (
 	"sync"
 
 	"github.com/gin-gonic/gin"
-	"github.com/omyo/gonest"
+	"github.com/omyo-group/gonest"
 )
 
 // Default paths served by Module.

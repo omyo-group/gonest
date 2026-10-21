@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/omyo/gonest"
-	"github.com/omyo/gonest/modules/config"
-	"github.com/omyo/gonest/modules/logger"
+	"github.com/omyo-group/gonest"
+	"github.com/omyo-group/gonest/modules/config"
+	"github.com/omyo-group/gonest/modules/logger"
 )
 
 // docs:config-types

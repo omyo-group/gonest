@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/omyo/gonest/internal/core"
+	"github.com/omyo-group/gonest/internal/core"
 )
 
 // ownerSet is a set of provider owners.

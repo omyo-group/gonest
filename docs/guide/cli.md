@@ -4,7 +4,7 @@
 generated code is ordinary Go that you own.
 
 ```sh
-go install github.com/omyo/gonest/cmd/gonest@latest
+go install github.com/omyo-group/gonest/cmd/gonest@latest
 # or, from a checkout of the repository:
 go run ./cmd/gonest --help
 ```

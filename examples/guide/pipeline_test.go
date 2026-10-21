@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/gin-gonic/gin"
-	"github.com/omyo/gonest"
+	"github.com/omyo-group/gonest"
 )
 
 // Trace records the steps of one request.

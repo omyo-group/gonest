@@ -1,6 +1,6 @@
 package gonest
 
-import "github.com/omyo/gonest/internal/core"
+import "github.com/omyo-group/gonest/internal/core"
 
 // Contracts re-exported from internal/core. See docs/contracts.md.
 

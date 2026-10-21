@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/omyo/gonest"
-	"github.com/omyo/gonest/modules/config"
+	"github.com/omyo-group/gonest"
+	"github.com/omyo-group/gonest/modules/config"
 )
 
 type itCfg struct {

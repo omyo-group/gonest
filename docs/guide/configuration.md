@@ -1,6 +1,6 @@
 # Configuration
 
-`github.com/omyo/gonest/modules/config` is the ConfigModule: a typed struct
+`github.com/omyo-group/gonest/modules/config` is the ConfigModule: a typed struct
 loaded from default tags, `.env` files and environment variables, validated
 with `validate` tags, and provided as `*T`. Loading happens while the
 application starts, so bad configuration stops `gonest.New` with every
