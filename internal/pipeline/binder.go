@@ -99,11 +99,15 @@ type binder struct {
 	zero    any
 	fields  []bfield
 	hasJSON bool
-	// bodyLimit caps JSON bodies (http.MaxBytesReader); <= 0 means none.
+	hasForm bool // form or file fields: the form body is parsed up front
+	// bodyLimit caps JSON and urlencoded bodies (http.MaxBytesReader);
+	// <= 0 means none.
 	bodyLimit int64
-	reset     [][]int // exported non-body fields zeroed after JSON decoding
-	validate  *validator.Validate
-	names     []fieldName
+	// multipartLimit caps multipart bodies; <= 0 means none.
+	multipartLimit int64
+	reset          [][]int // exported non-body fields zeroed after JSON decoding
+	validate       *validator.Validate
+	names          []fieldName
 
 	// scratch recycles the *typ values that value inputs are bound into.
 	// The handler receives a copy (boxing a struct into an interface
@@ -125,11 +129,10 @@ func compileBinder(t reflect.Type, v *validator.Validate) (*binder, error) {
 	if len(errs) > 0 {
 		return nil, fmt.Errorf("input %s: %w", t, errors.Join(errs...))
 	}
-	hasForm := false
 	for _, f := range b.fields {
-		hasForm = hasForm || f.src == srcForm
+		b.hasForm = b.hasForm || f.src == srcForm
 	}
-	if hasForm && b.hasJSON {
+	if b.hasForm && b.hasJSON {
 		return nil, fmt.Errorf("input %s: cannot mix json and form fields", t)
 	}
 	if hasValidateTags(b.typ, map[reflect.Type]bool{}) {
@@ -321,6 +324,11 @@ func (b *binder) bind(gc *gin.Context) (any, error) {
 			}
 		}
 	}
+	if b.hasForm {
+		if err := b.parseForm(gc); err != nil {
+			return nil, err
+		}
+	}
 	var ferrs core.ValidationErrors
 	for i := range b.fields {
 		f := &b.fields[i]
@@ -395,6 +403,52 @@ func (b *binder) putScratch(pv reflect.Value) {
 	b.scratch.Put(pv.Interface())
 }
 
+// parseForm caps the request body and parses the form once, so an oversized
+// body (413) or a malformed multipart body (400) is reported instead of
+// reading as missing fields. Multipart bodies get multipartLimit, urlencoded bodies bodyLimit.
+func (b *binder) parseForm(gc *gin.Context) error {
+	r := gc.Request
+	ct := r.Header.Get("Content-Type")
+	multi := len(ct) >= 10 && strings.EqualFold(ct[:10], "multipart/")
+	limit := b.bodyLimit
+	if multi {
+		limit = b.multipartLimit
+	}
+	if limit > 0 && r.Body != nil && r.Body != http.NoBody {
+		r.Body = http.MaxBytesReader(gc.Writer, r.Body, limit)
+	}
+	// ParseForm reads urlencoded bodies (ParseMultipartForm would hide its
+	// error behind http.ErrNotMultipart). Its other errors, such as a
+	// malformed query string, stay lenient as in gin. Both calls cache their
+	// result for the GetPostFormArray and bindFile calls that follow.
+	if he := tooLarge(r.ParseForm()); he != nil {
+		return he
+	}
+	if !multi {
+		return nil
+	}
+	if _, err := gc.MultipartForm(); err != nil {
+		if he := tooLarge(err); he != nil {
+			return he
+		}
+		return core.BadRequest("invalid multipart body").Wrap(err)
+	}
+	return nil
+}
+
+// tooLarge returns a 413 error when err comes from http.MaxBytesReader, else
+// nil (also for a nil err).
+func tooLarge(err error) *core.HTTPError {
+	var mbe *http.MaxBytesError
+	if err == nil || !errors.As(err, &mbe) {
+		return nil
+	}
+	return core.NewHTTPError(http.StatusRequestEntityTooLarge,
+		fmt.Sprintf("request body exceeds %d bytes", mbe.Limit)).Wrap(err)
+}
+
+// bindFile sets a file field from the multipart form parsed by parseForm. A
+// request that is not multipart leaves the field unset.
 func bindFile(gc *gin.Context, f *bfield, v reflect.Value) {
 	form, err := gc.MultipartForm()
 	if err != nil || form == nil {
@@ -443,10 +497,8 @@ func decodeJSON(r *http.Request, dst any) (bool, error) {
 				Message: "must be of type " + te.Type.String(),
 			}}).Wrap(err)
 		}
-		var tooLarge *http.MaxBytesError
-		if errors.As(err, &tooLarge) {
-			return false, core.NewHTTPError(http.StatusRequestEntityTooLarge,
-				fmt.Sprintf("request body exceeds %d bytes", tooLarge.Limit)).Wrap(err)
+		if he := tooLarge(err); he != nil {
+			return false, he
 		}
 		return false, core.BadRequest("invalid JSON body").Wrap(err)
 	}

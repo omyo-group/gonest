@@ -59,9 +59,12 @@ func writeRedacted(b *strings.Builder, v reflect.Value, secret bool) {
 	if !v.CanInterface() {
 		return
 	}
+	if v.Kind() == reflect.Ptr && v.Type().Elem() == urlType {
+		v = v.Elem()
+	}
 	if v.Type() == urlType {
 		u := v.Interface().(url.URL)
-		b.WriteString(u.String())
+		b.WriteString(u.Redacted()) // masks the password in user:password@
 		return
 	}
 	fmt.Fprintf(b, "%v", v.Interface())

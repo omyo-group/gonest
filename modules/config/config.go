@@ -177,13 +177,10 @@ func (l *loader) walk(sv reflect.Value, prefix, path string) {
 		if !ok {
 			continue
 		}
+		// The raw value and the parse error (which quotes it) are never
+		// reported: an untagged field can still hold a credential.
 		if err := setValue(fv, raw); err != nil {
-			secret := sf.Tag.Get("secret") == "true"
-			if secret {
-				l.problems = append(l.problems, fmt.Sprintf("%s: invalid value", key))
-			} else {
-				l.problems = append(l.problems, fmt.Sprintf("%s: invalid value %q: %v", key, raw, err))
-			}
+			l.problems = append(l.problems, fmt.Sprintf("%s: invalid value, want %s", key, fv.Type()))
 		}
 	}
 }

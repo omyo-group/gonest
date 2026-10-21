@@ -2,6 +2,7 @@ package gonest
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"sync"
@@ -35,8 +36,15 @@ type AppConfig struct {
 	Filters         []ExceptionFilter
 	// GlobalPrefix is prepended to every route path, e.g. "/api".
 	GlobalPrefix string
-	// BodyLimit caps JSON request bodies in bytes (default 1 MiB, see WithBodyLimit).
+	// BodyLimit caps JSON and urlencoded request bodies in bytes (default
+	// 1 MiB, see WithBodyLimit).
 	BodyLimit int64
+	// MultipartLimit caps multipart request bodies in bytes (default 32 MiB,
+	// see WithMultipartLimit).
+	MultipartLimit int64
+	// TrustedProxies, when non-nil, replaces the engine's trusted proxies
+	// (see WithTrustedProxies).
+	TrustedProxies []string
 	// DisableStartupLog silences the route table logged at boot.
 	DisableStartupLog bool
 }
@@ -76,14 +84,35 @@ func WithGlobalFilters(f ...ExceptionFilter) Option {
 	return func(c *AppConfig) { c.Filters = append(c.Filters, f...) }
 }
 
-// DefaultBodyLimit is the JSON request body limit applied unless WithBodyLimit
-// says otherwise: 1 MiB.
+// DefaultBodyLimit is the JSON and urlencoded form request body limit applied
+// unless WithBodyLimit says otherwise: 1 MiB.
 const DefaultBodyLimit int64 = 1 << 20
 
-// WithBodyLimit caps JSON request bodies at n bytes; larger requests get
-// 413 Request Entity Too Large. n <= 0 disables the limit. Default: DefaultBodyLimit.
+// DefaultMultipartLimit is the multipart request body limit applied unless
+// WithMultipartLimit says otherwise: 32 MiB, gin's default MaxMultipartMemory.
+const DefaultMultipartLimit int64 = 32 << 20
+
+// WithBodyLimit caps JSON and urlencoded form request bodies at n bytes;
+// larger requests get 413 Request Entity Too Large. n <= 0 disables the
+// limit. Default: DefaultBodyLimit.
 func WithBodyLimit(n int64) Option {
 	return func(c *AppConfig) { c.BodyLimit = n }
+}
+
+// WithMultipartLimit caps multipart (file upload) request bodies at n bytes;
+// larger requests get 413 Request Entity Too Large. n <= 0 disables the
+// limit. Default: DefaultMultipartLimit.
+func WithMultipartLimit(n int64) Option {
+	return func(c *AppConfig) { c.MultipartLimit = n }
+}
+
+// WithTrustedProxies sets the proxies (IPs or CIDRs) whose X-Forwarded-For
+// and X-Real-IP headers are trusted for Ctx.ClientIP and the request log.
+// By default no proxy is trusted and the client IP is the peer address; set
+// this when the application runs behind a load balancer or reverse proxy.
+// It also applies to an engine passed with WithEngine.
+func WithTrustedProxies(proxies ...string) Option {
+	return func(c *AppConfig) { c.TrustedProxies = append([]string{}, proxies...) }
 }
 
 // WithGlobalPrefix prefixes every route, e.g. "/api/v1".
@@ -96,7 +125,11 @@ func WithoutStartupLog() Option { return func(c *AppConfig) { c.DisableStartupLo
 // provider, instantiates controllers, mounts routes and runs OnModuleInit and
 // OnApplicationBootstrap hooks. Any failure aborts startup with a descriptive error.
 func New(root *Module, opts ...Option) (*App, error) {
-	cfg := AppConfig{ShutdownTimeout: defaultShutdownTimeout, BodyLimit: DefaultBodyLimit}
+	cfg := AppConfig{
+		ShutdownTimeout: defaultShutdownTimeout,
+		BodyLimit:       DefaultBodyLimit,
+		MultipartLimit:  DefaultMultipartLimit,
+	}
 	for _, o := range opts {
 		if o != nil {
 			o(&cfg)
@@ -111,11 +144,17 @@ func New(root *Module, opts ...Option) (*App, error) {
 	if cfg.Engine == nil {
 		cfg.Engine = newEngine()
 	}
+	if cfg.TrustedProxies != nil {
+		if err := cfg.Engine.SetTrustedProxies(cfg.TrustedProxies); err != nil {
+			return nil, fmt.Errorf("gonest: trusted proxies: %w", err)
+		}
+	}
 	rt, err := module.Bootstrap(context.Background(), root, module.Options{
-		Engine:       cfg.Engine,
-		Logger:       cfg.Logger,
-		GlobalPrefix: cfg.GlobalPrefix,
-		BodyLimit:    cfg.BodyLimit,
+		Engine:         cfg.Engine,
+		Logger:         cfg.Logger,
+		GlobalPrefix:   cfg.GlobalPrefix,
+		BodyLimit:      cfg.BodyLimit,
+		MultipartLimit: cfg.MultipartLimit,
 		Globals: pipeline.Globals{
 			Guards:       cfg.Guards,
 			Interceptors: cfg.Interceptors,

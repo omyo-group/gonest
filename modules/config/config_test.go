@@ -331,3 +331,45 @@ func write(t *testing.T, path, s string) {
 		t.Fatal(err)
 	}
 }
+
+func TestUntaggedConversionNotLeaked(t *testing.T) {
+	type c struct {
+		DSN  url.URL
+		Port int
+	}
+	// "%zz" makes url.Parse fail; its error quotes the whole input.
+	env := map[string]string{"DSN": "postgres://u:hunter2@db/%zz", "PORT": "hunter3"}
+	_, err := Load[c](Options{Lookup: lookupMap(env), EnvFiles: []string{}})
+	if err == nil {
+		t.Fatal("want error")
+	}
+	for _, leak := range []string{"hunter2", "hunter3"} {
+		if strings.Contains(err.Error(), leak) {
+			t.Errorf("%s leaked: %v", leak, err)
+		}
+	}
+	for _, want := range []string{"DSN: invalid value, want url.URL", "PORT: invalid value, want int"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("missing %q in %v", want, err)
+		}
+	}
+}
+
+func TestRedactedURLPassword(t *testing.T) {
+	u, _ := url.Parse("postgres://user:hunter2@db:5432/app")
+	cases := []struct {
+		name string
+		in   any
+	}{
+		{"value", struct{ DSN url.URL }{*u}},
+		{"pointer", struct{ DSN *url.URL }{u}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			out := Redacted(tc.in)
+			if strings.Contains(out, "hunter2") || !strings.Contains(out, "DSN:postgres://user:xxxxx@db:5432/app") {
+				t.Errorf("got %s", out)
+			}
+		})
+	}
+}

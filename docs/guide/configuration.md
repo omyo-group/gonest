@@ -72,8 +72,13 @@ converted (so `APP_PORT=0` is not reported while `APP_DB_POOL_SIZE=many` is
 broken):
 
 ```text
-config: 1 problem(s): APP_DB_POOL_SIZE: invalid value "many": strconv.ParseInt: parsing "many": invalid syntax
+config: 1 problem(s): APP_DB_POOL_SIZE: invalid value, want int
 ```
+
+Problems name the variable and the expected type, never the value, so a
+malformed credential does not end up in boot logs even when its field is not
+tagged `secret:"true"`. `config.Redacted` masks `secret:"true"` fields and the
+password of every `url.URL`.
 
 The `.env` parser (also exported as `config.ParseEnv`) supports
 `KEY=VALUE`, `export KEY=...`, `#` comments, single quotes (literal) and

@@ -69,7 +69,7 @@ func Example_configLoad() {
 	// Output:
 	// 9000 5s [http://localhost:3000] db.local 10
 	// AppConfig{Port:9000, APIKey:******, Timeout:5s, Origins:[http://localhost:3000], Database:DBConfig{Host:db.local, PoolSize:10}}
-	// config: 1 problem(s): APP_DB_POOL_SIZE: invalid value "many": strconv.ParseInt: parsing "many": invalid syntax
+	// config: 1 problem(s): APP_DB_POOL_SIZE: invalid value, want int
 }
 
 func Example_configModule() {

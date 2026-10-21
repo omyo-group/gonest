@@ -91,7 +91,15 @@ are passed as method values (`gonest.Handle(c.Greet)`) rather than closures.
 
 `app.Listen(addr)` serves until SIGINT or SIGTERM, then stops accepting
 connections, waits for in-flight requests (10 seconds by default, see
-`gonest.WithShutdownTimeout`) and runs the shutdown hooks.
+`gonest.WithShutdownTimeout`) and runs the shutdown hooks. Its server allows
+10 seconds to read request headers and 60 seconds to read a whole request,
+with no write timeout so streaming responses work; for other timeouts or TLS,
+build an `*http.Server` and call `app.Serve(ctx, srv)`.
+
+No proxy is trusted by default, so `X-Forwarded-For` and `X-Real-IP` are
+ignored and the client IP (in `ctx.Gin().ClientIP()` and the request log) is
+the peer address. Behind a load balancer or reverse proxy, list its addresses
+with `gonest.WithTrustedProxies("10.0.0.0/8")`.
 
 ## The SaaS example
 

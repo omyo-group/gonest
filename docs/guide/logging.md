@@ -84,6 +84,9 @@ Two requests, the second failing, produce (time and latency normalised):
 {"time":"T","level":"ERROR","msg":"request","request_id":"def-456","method":"GET","path":"/ping","status":500,"latency":N,"bytes":84,"client_ip":"IP"}
 ```
 
+`client_ip` is the peer address unless the application trusts a proxy with
+`gonest.WithTrustedProxies` (see [Getting started](getting-started.md)).
+
 The client of the failing request only receives
 `{"statusCode":500,"message":"Internal Server Error","error":"Internal Server Error"}`.
 

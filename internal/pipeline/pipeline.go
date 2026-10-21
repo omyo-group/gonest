@@ -27,9 +27,12 @@ type Options struct {
 	GlobalPrefix string
 	// Validator overrides the shared validator instance; nil means a default one.
 	Validator *validator.Validate
-	// BodyLimit caps the size of JSON request bodies in bytes; requests above
-	// it get 413. Zero or negative means no limit.
+	// BodyLimit caps the size of JSON and urlencoded form request bodies in
+	// bytes; requests above it get 413. Zero or negative means no limit.
 	BodyLimit int64
+	// MultipartLimit caps the size of multipart request bodies in bytes;
+	// requests above it get 413. Zero or negative means no limit.
+	MultipartLimit int64
 }
 
 // Globals are the application-wide pipeline components.
@@ -230,6 +233,7 @@ func (m *Mounter) binderFor(t reflect.Type) (*binder, error) {
 		return nil, err
 	}
 	b.bodyLimit = m.opts.BodyLimit
+	b.multipartLimit = m.opts.MultipartLimit
 	m.binders[t] = b
 	return b, nil
 }

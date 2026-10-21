@@ -284,10 +284,14 @@ type UpdateInput struct {
 }
 ```
 
-JSON bodies are limited to 1 MiB by default (`gonest.DefaultBodyLimit`); a
-larger body is answered with 413 and the message `request body exceeds n bytes`.
-Change the limit with `gonest.WithBodyLimit(n)`, or pass `0` to disable it.
-Form bodies are limited by `net/http` and Gin's `MaxMultipartMemory`.
+JSON and urlencoded form bodies are limited to 1 MiB by default
+(`gonest.DefaultBodyLimit`); a larger body is answered with 413 and the
+message `request body exceeds n bytes`. Change the limit with
+`gonest.WithBodyLimit(n)`, or pass `0` to disable it. Multipart bodies (file
+uploads) have their own limit, 32 MiB by default
+(`gonest.DefaultMultipartLimit`), set with `gonest.WithMultipartLimit(n)`. A
+malformed multipart body is answered with 400 rather than reading as missing
+fields.
 
 ## Responses and errors
 

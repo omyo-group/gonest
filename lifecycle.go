@@ -16,23 +16,32 @@ import (
 const (
 	defaultShutdownTimeout   = 10 * time.Second
 	defaultReadHeaderTimeout = 10 * time.Second
+	defaultReadTimeout       = 60 * time.Second
 	defaultIdleTimeout       = 120 * time.Second
 )
 
 // newEngine creates the default gin engine without gin's Logger and Recovery
-// middleware (the pipeline recovers panics itself). Gin's global mode is only
-// touched when it is still the implicit debug default: release mode is set
-// unless GIN_MODE is present in the environment.
+// middleware (the pipeline recovers panics itself). It trusts no proxy, so
+// forwarding headers cannot spoof the client IP (see WithTrustedProxies).
+// Gin's global mode is only touched when it is still the implicit debug
+// default: release mode is set unless GIN_MODE is present in the environment.
 func newEngine() *gin.Engine {
 	if _, ok := os.LookupEnv(gin.EnvGinMode); !ok && gin.Mode() == gin.DebugMode {
 		gin.SetMode(gin.ReleaseMode)
 	}
-	return gin.New()
+	e := gin.New()
+	_ = e.SetTrustedProxies(nil) // cannot fail: nil parses no address
+	return e
 }
 
 // Listen serves HTTP on addr until SIGINT or SIGTERM, then shuts down gracefully
 // and runs shutdown hooks. It returns nil after a clean shutdown. A second
 // signal during the graceful shutdown terminates the process immediately.
+//
+// The server allows 10s to read the request headers, 60s to read the whole
+// request and keeps idle connections for 120s. It sets no write timeout, so
+// streaming responses work. For other timeouts, build an *http.Server and
+// call Serve.
 func (a *App) Listen(addr string) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -43,6 +52,7 @@ func (a *App) Listen(addr string) error {
 		Addr:              addr,
 		Handler:           a.cfg.Engine,
 		ReadHeaderTimeout: defaultReadHeaderTimeout,
+		ReadTimeout:       defaultReadTimeout,
 		IdleTimeout:       defaultIdleTimeout,
 	}
 	return a.Serve(ctx, srv)
