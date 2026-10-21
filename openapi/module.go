@@ -5,10 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 	"sync"
 
+	"github.com/gin-gonic/gin"
 	"github.com/omyo/gonest"
 )
 
@@ -39,6 +41,11 @@ type Options struct {
 	// gonest.UseGuards to protect the documentation. Documentation options
 	// (Summary, Tags, ...) are irrelevant: the routes are always Hidden.
 	RouteOptions []gonest.RouteOption
+	// Public declares that serving the documentation without a guard in
+	// RouteOptions is intended: the API is public, or a global guard
+	// protects these routes. It silences the warning logged at bootstrap in
+	// release mode.
+	Public bool
 }
 
 // Module returns a module named "openapi" that serves the document of the
@@ -49,13 +56,17 @@ type Options struct {
 // document. Like any route they are prefixed by gonest.WithGlobalPrefix.
 // Bootstrap fails if the options are inconsistent, for example when a route
 // requires a security scheme that is not defined.
+//
+// The document describes every route of the application. In gin release mode,
+// bootstrap logs a warning when RouteOptions carry no guard and Public is not
+// set, since anyone can then read the document.
 func Module(opts Options) *gonest.Module {
 	o := opts.normalised()
 	return &gonest.Module{
 		Name: "openapi",
 		Controllers: []any{
-			func(table *gonest.RouteTable) *docsController {
-				return &docsController{opts: o, table: table}
+			func(table *gonest.RouteTable, log *slog.Logger) *docsController {
+				return &docsController{opts: o, table: table, log: log}
 			},
 		},
 	}
@@ -85,6 +96,7 @@ func cleanPath(p, def string) string {
 type docsController struct {
 	opts  Options
 	table *gonest.RouteTable
+	log   *slog.Logger
 
 	once sync.Once
 	spec []byte
@@ -104,8 +116,35 @@ func (c *docsController) Routes(r gonest.Router) {
 	r.GET(c.opts.UIPath+"/*file", gonest.HandleRaw(c.serveAsset), gonest.Hidden())
 }
 
-// OnApplicationBootstrap builds the document once all routes are mounted.
-func (c *docsController) OnApplicationBootstrap(context.Context) error { return c.build() }
+// OnApplicationBootstrap builds the document once all routes are mounted and
+// warns when it is served unguarded in release mode.
+func (c *docsController) OnApplicationBootstrap(context.Context) error {
+	if !c.opts.Public && gin.Mode() == gin.ReleaseMode && !hasGuard(c.opts.RouteOptions) {
+		paths := c.opts.JSONPath
+		if !c.opts.DisableUI {
+			paths += " and " + c.opts.UIPath
+		}
+		log := c.log
+		if log == nil {
+			log = slog.Default()
+		}
+		log.Warn("openapi: documentation is served without a guard; protect it with Options.RouteOptions "+
+			"(gonest.UseGuards) or set Options.Public if a global guard covers it or it is meant to be public",
+			"paths", paths)
+	}
+	return c.build()
+}
+
+// hasGuard reports whether opts add at least one guard.
+func hasGuard(opts []gonest.RouteOption) bool {
+	var cfg gonest.RouteConfig
+	for _, o := range opts {
+		if o != nil {
+			o(&cfg)
+		}
+	}
+	return len(cfg.Guards) > 0
+}
 
 // build generates and encodes the document at most once. It also runs lazily
 // on the first request, in case lifecycle hooks are not invoked on controllers.

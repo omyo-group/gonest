@@ -17,6 +17,7 @@ var Module = &gonest.Module{
 		gonest.Value[Clock](time.Now),
 		gonest.Provide(NewTokenService),
 		gonest.Provide(NewUserStore),
+		gonest.Provide(NewLoginLimiter),
 		gonest.Provide(NewJWTGuard),
 		gonest.Provide(NewRolesGuard),
 	},

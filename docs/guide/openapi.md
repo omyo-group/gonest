@@ -18,37 +18,37 @@ From the SaaS root module:
 // logger.ForRoot, openapi.Module) are functions returning *gonest.Module, so
 // the root is built by a function too.
 func NewModule(o Options) *gonest.Module {
+	imports := []*gonest.Module{
+		// Global modules: *settings.Config and *slog.Logger are injectable everywhere.
+		config.ForRoot[settings.Config](config.Options{
+			Prefix:   settings.EnvPrefix,
+			Lookup:   o.Lookup,
+			EnvFiles: o.EnvFiles,
+		}),
+		logger.ForRoot(logger.Options{Level: o.LogLevel, Format: o.LogFormat, Output: o.LogOutput}),
+
+		platform.Module,
+		auth.Module,
+		tenants.Module,
+		projects.Module,
+	}
+	if o.Docs {
+		imports = append(imports, openapi.Module(openapi.Options{
+			Info: openapi.Info{
+				Title:       "Gonest SaaS example",
+				Version:     "1.0.0",
+				Description: "Multi-tenant projects API. Log in with POST /auth/login, then send the token and X-Tenant-ID.",
+			},
+			SecuritySchemes: map[string]openapi.SecurityScheme{"bearer": openapi.BearerJWT()},
+			// Enabled explicitly for local exploration: acknowledge that
+			// the documentation is unguarded.
+			Public: true,
+		}))
+	}
 	return &gonest.Module{
-		Name: "app",
-		Imports: []*gonest.Module{
-			// Global modules: *settings.Config and *slog.Logger are injectable everywhere.
-			config.ForRoot[settings.Config](config.Options{
-				Prefix:   settings.EnvPrefix,
-				Lookup:   o.Lookup,
-				EnvFiles: o.EnvFiles,
-			}),
-			logger.ForRoot(logger.Options{Level: o.LogLevel, Format: o.LogFormat, Output: o.LogOutput}),
-
-			platform.Module,
-			auth.Module,
-			tenants.Module,
-			projects.Module,
-
-			openapi.Module(openapi.Options{
-				Info: openapi.Info{
-					Title:       "Gonest SaaS example",
-					Version:     "1.0.0",
-					Description: "Multi-tenant projects API. Log in with POST /auth/login, then send the token and X-Tenant-ID.",
-				},
-				SecuritySchemes: map[string]openapi.SecurityScheme{"bearer": openapi.BearerJWT()},
-			}),
-		},
-		// Request logging for every route except the health probe.
-		Configure: func(m *gonest.MiddlewareConsumer, l *slog.Logger) {
-			m.Apply(logger.RequestLogger(l)).
-				Exclude(gonest.ForPath("/health")).
-				ForAllRoutes()
-		},
+		Name:      "app",
+		Imports:   imports,
+		Configure: configure,
 	}
 }
 ```
@@ -63,6 +63,13 @@ Global guards apply to the documentation routes too. `RouteOptions` adds
 route options to them: `gonest.SetMetadata(...)` to let a global guard with
 a "public" escape hatch (see [Pipeline](pipeline.md#global-guard-with-a-public-escape-hatch))
 through, or `gonest.UseGuards(...)` to protect the documentation.
+
+The document maps every route of the API, so in release mode (the Gonest
+default) `gonest.New` logs a warning when `RouteOptions` carry no guard.
+Set `Public: true` to silence it when that is intended: the API is public,
+or a global guard already covers the documentation. The SaaS example goes
+one step further and only imports the module when the server runs with
+`-docs`.
 
 ## What ends up in the document
 

@@ -49,6 +49,7 @@ var projectFiles = []projectFile{
 	{"Dockerfile.tmpl", "Dockerfile", 0o644, false},
 	{"golangci.yml.tmpl", ".golangci.yml", 0o644, false},
 	{"gitignore.tmpl", ".gitignore", 0o644, false},
+	{"dockerignore.tmpl", ".dockerignore", 0o644, false},
 	{"env.example.tmpl", ".env.example", 0o644, true},
 	{"README.md.tmpl", "README.md", 0o644, false},
 }

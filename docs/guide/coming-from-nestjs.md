@@ -371,31 +371,38 @@ var DomainErrorFilter = gonest.ExceptionFilterFunc(func(ctx *gonest.Ctx, err err
 ## Middleware
 
 ```ts
-export class TenantsModule implements NestModule {
+export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(TenantMiddleware).forRoutes('projects', 'tenants');
+    consumer.apply(LoggerMiddleware).exclude('health').forRoutes('*');
+    consumer.apply(TenantMiddleware)
+      .exclude('health', 'auth/(.*)', 'openapi.json', 'docs/(.*)')
+      .forRoutes('*');
   }
 }
 ```
 
-<!-- snippet: examples/saas/internal/tenants/tenants.go#tenants-module -->
+<!-- snippet: examples/saas/internal/app/app.go#root-configure -->
 ```go
-// Module provides and exports Service, and applies the tenant middleware to
-// the tenant-scoped routes of the whole application (NestJS configure()).
-// RouteSpec paths are relative to the global prefix; a trailing * matches the
-// path itself and everything below it.
-var Module = &gonest.Module{
-	Name:        "tenants",
-	Imports:     []*gonest.Module{auth.Module},
-	Providers:   []gonest.Provider{gonest.Provide(NewService)},
-	Controllers: []any{NewTenantsController},
-	Exports:     []gonest.Token{gonest.TokenOf[*Service]()},
-	Configure: func(m *gonest.MiddlewareConsumer, svc *Service) {
-		m.Apply(svc.Middleware()).ForRoutes(
-			gonest.ForPath("/projects/*"),
-			gonest.ForPath("/tenants/*"),
-		)
-	},
+// configure is the root module's Configure (NestJS configure(consumer)): its
+// parameters after the consumer are injected. Rules apply to the routes of
+// the whole application; paths are relative to the global prefix and a
+// trailing * matches the path itself and everything below it.
+func configure(m *gonest.MiddlewareConsumer, l *slog.Logger, tenantSvc *tenants.Service) {
+	// Request logging for every route except the health probe.
+	m.Apply(logger.RequestLogger(l)).
+		Exclude(gonest.ForPath("/health")).
+		ForAllRoutes()
+	// Tenant resolution is deny by default: every route requires a valid
+	// X-Tenant-ID except the tenant-independent ones listed here, so a new
+	// controller is tenant-scoped without extra wiring.
+	m.Apply(tenantSvc.Middleware()).
+		Exclude(
+			gonest.ForPath("/health"),
+			gonest.ForPath("/auth/*"),
+			gonest.ForPath(openapi.DefaultJSONPath),
+			gonest.ForPath(openapi.DefaultUIPath+"/*"),
+		).
+		ForAllRoutes()
 }
 ```
 

@@ -13,13 +13,28 @@ import (
 	"github.com/omyo/gonest/gonesttest"
 )
 
+// testSecret is the JWT secret of the fake environment.
+const testSecret = "test-only-secret-0123456789abcdef"
+
+// testDefaults complete the fake environment: a JWT secret (required) and
+// the cheapest bcrypt cost, so that logins stay fast under -race.
+var testDefaults = map[string]string{
+	"SAAS_JWT_SECRET":  testSecret,
+	"SAAS_BCRYPT_COST": "4",
+}
+
 // env is a fake environment: tests never read the real one or a .env file.
+// vars take precedence over testDefaults.
 func env(vars map[string]string) app.Options {
 	return app.Options{
 		LogOutput: io.Discard,
 		EnvFiles:  []string{},
+		Docs:      true,
 		Lookup: func(k string) (string, bool) {
-			v, ok := vars[k]
+			if v, ok := vars[k]; ok {
+				return v, true
+			}
+			v, ok := testDefaults[k]
 			return v, ok
 		},
 	}
@@ -187,4 +202,34 @@ func TestEndpoints(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestLoginThrottled(t *testing.T) {
+	a := newApp(t)
+	bad := auth.LoginInput{Email: "alice@acme.test", Password: "wrong-password"}
+	for range 5 {
+		a.Request("POST", "/auth/login").WithJSON(bad).Do().ExpectStatus(http.StatusUnauthorized)
+	}
+	res := a.Request("POST", "/auth/login").WithJSON(bad).Do().
+		ExpectStatus(http.StatusTooManyRequests).
+		ExpectErrorMessage("too many failed login attempts")
+	if res.Header().Get("Retry-After") == "" {
+		t.Error("Retry-After missing on 429")
+	}
+	// The right password is refused too while the client is throttled, and
+	// other accounts from the same client are still allowed.
+	a.Request("POST", "/auth/login").
+		WithJSON(auth.LoginInput{Email: "alice@acme.test", Password: auth.DemoPassword}).
+		Do().ExpectStatus(http.StatusTooManyRequests)
+	login(t, a, "bob@acme.test")
+}
+
+func TestNewRoutesAreTenantScoped(t *testing.T) {
+	a := newApp(t)
+	// /tenants/current was listed explicitly before; it is now covered by
+	// the deny-by-default rule like any route not excluded.
+	a.Request("GET", "/tenants/current").Do().
+		ExpectStatus(http.StatusBadRequest).
+		ExpectErrorMessage("missing X-Tenant-ID header")
+	a.Request("GET", "/health").Do().ExpectStatus(http.StatusOK)
 }

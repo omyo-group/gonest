@@ -75,7 +75,18 @@ func TestOpenAPIDocument(t *testing.T) {
 	if _, ok := doc.Paths["/docs"]; ok {
 		t.Error("hidden docs route listed")
 	}
+	// The documentation is tenant-independent: no X-Tenant-ID needed.
 	a.Request("GET", "/docs").Do().ExpectStatus(200).ExpectHeader("Content-Type", "text/html; charset=utf-8")
+	a.Request("GET", "/docs/swagger-ui.css").Do().ExpectStatus(200)
+}
+
+func TestDocsDisabled(t *testing.T) {
+	o := env(nil)
+	o.Docs = false
+	a := gonesttest.New(t, app.NewModule(o)).Compile()
+	for _, path := range []string{"/openapi.json", "/docs"} {
+		a.Request("GET", path).Do().ExpectStatus(404)
+	}
 }
 
 // docs:testing-override
@@ -124,10 +135,10 @@ func TestRepositoryOverride(t *testing.T) {
 func TestConfiguration(t *testing.T) {
 	a := gonesttest.New(t, app.NewModule(env(map[string]string{
 		"SAAS_PORT":       "9090",
-		"SAAS_JWT_SECRET": "0123456789abcdef-test",
+		"SAAS_JWT_SECRET": "0123456789abcdef0123456789abcdef-test",
 	}))).Compile()
 	cfg := gonesttest.Get[*settings.Config](a)
-	if cfg.Port != 9090 || cfg.TokenTTL != time.Hour || cfg.JWTSecret != "0123456789abcdef-test" {
+	if cfg.Port != 9090 || cfg.TokenTTL != time.Hour || cfg.JWTSecret != "0123456789abcdef0123456789abcdef-test" {
 		t.Fatalf("config = %+v", cfg)
 	}
 	if s := config.Redacted(cfg); strings.Contains(s, "0123456789") {
@@ -138,6 +149,7 @@ func TestConfiguration(t *testing.T) {
 func TestInvalidConfigurationFailsBootstrap(t *testing.T) {
 	cases := map[string]map[string]string{
 		"short secret": {"SAAS_JWT_SECRET": "short"},
+		"empty secret": {"SAAS_JWT_SECRET": ""},
 		"bad port":     {"SAAS_PORT": "http"},
 		"port range":   {"SAAS_PORT": "70000"},
 	}

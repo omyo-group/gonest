@@ -27,6 +27,7 @@ CREATE demo/Makefile (294 bytes)
 CREATE demo/Dockerfile (325 bytes)
 CREATE demo/.golangci.yml (180 bytes)
 CREATE demo/.gitignore (40 bytes)
+CREATE demo/.dockerignore (135 bytes)
 CREATE demo/.env.example (30 bytes)
 CREATE demo/README.md (663 bytes)
 Next: cd demo && go mod tidy && go run .

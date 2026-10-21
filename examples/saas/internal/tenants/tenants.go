@@ -140,22 +140,14 @@ func (c *TenantsController) Current(ctx *gonest.Ctx, _ CurrentInput) (Tenant, er
 
 // docs:tenants-module
 
-// Module provides and exports Service, and applies the tenant middleware to
-// the tenant-scoped routes of the whole application (NestJS configure()).
-// RouteSpec paths are relative to the global prefix; a trailing * matches the
-// path itself and everything below it.
+// Module provides and exports Service. The root module applies
+// Service.Middleware to every tenant-scoped route of the application.
 var Module = &gonest.Module{
 	Name:        "tenants",
 	Imports:     []*gonest.Module{auth.Module},
 	Providers:   []gonest.Provider{gonest.Provide(NewService)},
 	Controllers: []any{NewTenantsController},
 	Exports:     []gonest.Token{gonest.TokenOf[*Service]()},
-	Configure: func(m *gonest.MiddlewareConsumer, svc *Service) {
-		m.Apply(svc.Middleware()).ForRoutes(
-			gonest.ForPath("/projects/*"),
-			gonest.ForPath("/tenants/*"),
-		)
-	},
 }
 
 // docs:end
